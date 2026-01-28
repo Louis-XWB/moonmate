@@ -7,9 +7,6 @@ MoonMate 是一个创新的 Web3 AI 自动交易系统，它将复杂的量化�
 ---
 
 ## 🚀 功能演示
-
-*请将 `intro.mp4` 文件放置在项目根目录以在此处显示演示视频。*
-
 <video src="intro.mp4" controls="controls" style="max-width: 100%;">
 </video>
 
