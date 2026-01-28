@@ -1,0 +1,709 @@
+/* ==================== 横向布局 Decision Flow Matrix ==================== */
+
+.decision-flow-matrix.horizontal {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px);
+  background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0a0e27 100%);
+  overflow: hidden;  /* 主容器隐藏溢出 */
+  display: flex;
+  flex-direction: column;
+  font-family: 'Courier New', monospace;
+  min-width: 0;  /* 允许flex子项收缩 */
+}
+
+/* 动画背景画布 */
+.flow-canvas-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+/* ==================== 顶部控制栏 ==================== */
+
+.h-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 20px;  /* 减小内边距 */
+  background: rgba(10, 14, 39, 0.8);
+  border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.h-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.h-title {
+  font-size: 18px;  /* 减小字体 */
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  letter-spacing: 2px;  /* 减小字间距 */
+}
+
+.h-subtitle {
+  font-size: 10px;  /* 减小字体 */
+  color: #00ff88;
+  letter-spacing: 1px;
+}
+
+.h-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.h-stats {
+  display: flex;
+  gap: 15px;
+}
+
+.h-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.h-stat-label {
+  font-size: 10px;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.h-stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #00ffff;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+/* 总开关 */
+.h-master-switch {
+  position: relative;
+  width: 80px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.h-master-switch:hover {
+  border-color: rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.h-master-switch.on {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: #00ff88;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+}
+
+.h-master-switch.off {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.h-switch-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #00ffff, #00ff88);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.h-master-switch.on .h-switch-slider {
+  transform: translateX(44px);
+  background: linear-gradient(135deg, #00ff88, #00ffff);
+}
+
+.h-master-switch.off .h-switch-slider {
+  background: #666;
+  box-shadow: none;
+}
+
+.h-switch-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+/* 重置按钮 */
+.h-reset-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #00ffff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.h-reset-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: #00ffff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+  transform: rotate(180deg);
+}
+
+.h-reset-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ==================== 横向流程容器 ==================== */
+
+.h-flow-container {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;  /* 改为flex-start，让内容从顶部开始 */
+  justify-content: flex-start;
+  gap: 30px;
+  padding: 30px 30px;  /* 增加顶部padding从15px到30px */
+  padding-right: 150px;
+  padding-bottom: 30px;
+  overflow-x: auto;
+  overflow-y: visible;  /* 改为visible，允许垂直溢出 */
+  min-width: 0;
+}
+
+/* 隐藏滚动条但保持可滚动 */
+.h-flow-container::-webkit-scrollbar {
+  display: none;  /* 隐藏滚动条 */
+}
+
+.h-flow-container {
+  -ms-overflow-style: none;  /* IE和Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* ==================== 层 (Layer) ==================== */
+
+.h-layer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* 改为左对齐 */
+  gap: 15px;
+  min-width: 200px;  /* 增加最小宽度 */
+  flex-shrink: 0;  /* 防止收缩 */
+  animation: layerFadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes layerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.h-layer-header {
+  text-align: center;
+  margin-top: 0;  /* 不需要额外上边距，因为容器已绍flex-start */
+  margin-bottom: 5px;
+}
+
+.h-layer-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #00ffff;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  margin-bottom: 3px;
+}
+
+.h-layer-subtitle {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.h-layer-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ==================== 节点 (Node) ==================== */
+
+.h-node-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;  /* 顶部对齐 */
+  gap: 12px;
+  position: relative;
+  min-width: fit-content;
+  flex-shrink: 0;
+}
+
+/* 确保父节点左对齐 */
+.h-layer .h-node-wrapper {
+  align-self: flex-start;  /* 强制每个wrapper左对齐 */
+}
+
+.h-node {
+  position: relative;
+  width: 120px;
+  height: 50px;
+  background: linear-gradient(135deg, rgba(30, 30, 60, 0.8), rgba(50, 50, 80, 0.8));
+  border: 2px solid rgba(100, 100, 150, 0.5);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.h-node::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.h-node:hover::before {
+  left: 100%;
+}
+
+.h-node:hover {
+  border-color: rgba(0, 255, 255, 0.8);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  transform: translateY(-3px);
+}
+
+.h-node.enabled {
+  border-color: rgba(0, 255, 136, 0.6);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+}
+
+.h-node.disabled {
+  opacity: 0.4;
+  border-color: rgba(100, 100, 100, 0.3);
+  box-shadow: none;
+}
+
+.h-node.always-enabled {
+  cursor: default;
+}
+
+.h-node-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5));
+}
+
+.h-node-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.h-node-status {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 10px;
+  color: #00ff88;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+}
+
+.h-node.disabled .h-node-status {
+  color: #666;
+  text-shadow: none;
+}
+
+/* 脉冲效果 */
+.h-node-pulse {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  background: #00ff88;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+
+/* ==================== 子节点 (Sub Nodes) ==================== */
+
+.h-sub-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 8px;  /* 减小内边距 */
+  background: rgba(10, 10, 30, 0.6);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+  max-height: 300px;
+  overflow-y: auto;
+  min-width: 100px;  /* 减小最小宽度从180px到60px */
+  width: fit-content;  /* 自适应宽度 */
+  flex-shrink: 0;  /* 防止收缩 */
+}
+
+.h-sub-nodes::-webkit-scrollbar {
+  width: 4px;
+}
+
+.h-sub-nodes::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.h-sub-nodes::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.h-sub-node {
+  display: flex;
+  align-items: center;
+  gap: 4px;  /* 减小间距 */
+  padding: 4px 8px;  /* 减小内边距 */
+  background: rgba(30, 30, 50, 0.6);
+  border: 1px solid rgba(100, 100, 150, 0.3);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  animation: subNodeSlideIn 0.3s ease-out forwards;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 11px;  /* 减小字体 */
+}
+
+@keyframes subNodeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.h-sub-node:hover {
+  border-color: rgba(0, 255, 255, 0.6);
+  background: rgba(0, 255, 255, 0.1);
+  transform: translateX(3px);
+}
+
+.h-sub-node.enabled {
+  border-color: rgba(0, 255, 136, 0.5);
+}
+
+.h-sub-node.disabled {
+  opacity: 0.4;
+}
+
+.h-sub-node.always-enabled {
+  cursor: default;
+}
+
+.h-sub-node-dot {
+  font-size: 8px;
+  color: #00ff88;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+}
+
+.h-sub-node.disabled .h-sub-node-dot {
+  color: #666;
+  text-shadow: none;
+}
+
+.h-sub-node-name {
+  font-size: 11px;
+  color: #ccc;
+  white-space: nowrap;
+}
+
+/* ==================== 连接器 (Connector) ==================== */
+
+.h-connector {
+  position: relative;
+  width: 20px;  /* 进一步减小连接器宽度 */
+  height: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;  /* 防止收缩 */
+}
+
+.h-connector-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    rgba(0, 255, 255, 0.3) 0%, 
+    rgba(0, 255, 255, 0.6) 50%, 
+    rgba(0, 255, 255, 0.3) 100%
+  );
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.h-connector-arrow {
+  position: relative;
+  z-index: 2;
+  color: #00ffff;
+  font-size: 16px;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  animation: arrowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* 流动效果 */
+.h-connector-flow {
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  box-shadow: 0 0 10px #00ffff;
+  animation: flowAnimation 2s linear infinite;
+}
+
+@keyframes flowAnimation {
+  0% {
+    left: -20px;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+/* ==================== 底部信息栏 ==================== */
+
+.h-footer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 30px;
+  background: rgba(10, 14, 39, 0.8);
+  border-top: 2px solid rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.h-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.h-footer-icon {
+  font-size: 14px;
+}
+
+.h-footer-text {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+/* ==================== 加载和错误状态 ==================== */
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+  color: #00ffff;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(0, 255, 255, 0.2);
+  border-top-color: #00ffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #ff4444;
+  font-size: 18px;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 1400px) {
+  .h-node {
+    width: 100px;
+    height: 45px;
+  }
+  
+  .h-node-icon {
+    font-size: 18px;
+  }
+  
+  .h-node-label {
+    font-size: 12px;
+  }
+  
+  .h-connector {
+    width: 40px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .h-flow-container {
+    gap: 20px;
+  }
+  
+  .h-layer {
+    min-width: 120px;
+  }
+  
+  .h-node {
+    width: 90px;
+    height: 40px;
+  }
+  
+  .h-node-icon {
+    font-size: 16px;
+  }
+  
+  .h-node-label {
+    font-size: 11px;
+  }
+}
+
+/* ==================== 缩放控制 (Zoom Controls) ==================== */
+
+.h-zoom-controls {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 14, 39, 0.9);
+  border: 2px solid rgba(0, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
+}
+
+.h-zoom-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 6px;
+  color: #00ffff;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.h-zoom-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.8);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.h-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.h-zoom-reset {
+  font-size: 18px;
+}
+
+.h-zoom-level {
+  min-width: 45px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: bold;
+  color: #00ff88;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+  font-family: 'Courier New', monospace;
+}

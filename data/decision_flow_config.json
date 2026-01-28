@@ -1,0 +1,260 @@
+{
+  "master_switch": true,
+  "nodes": {
+    "marketData": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-28T01:07:56.221637",
+      "sub_nodes": [
+        {
+          "id": "binance",
+          "name": "Binance",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "okx",
+          "name": "OKX",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "coinbase",
+          "name": "Coinbase",
+          "enabled": false,
+          "status": "idle"
+        }
+      ]
+    },
+    "newsData": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": [
+        {
+          "id": "coindesk",
+          "name": "CoinDesk",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "cointelegraph",
+          "name": "Cointelegraph",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "theblock",
+          "name": "The Block",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "socialMedia": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-27T23:49:21.414292",
+      "sub_nodes": [
+        {
+          "id": "twitter",
+          "name": "Twitter(X)",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "reddit",
+          "name": "Reddit",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "telegram",
+          "name": "Telegram",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "onchainData": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": [
+        {
+          "id": "etherscan",
+          "name": "Etherscan",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "bscscan",
+          "name": "BSCScan",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "whale_alert",
+          "name": "Whale Alert",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "technicalIndicators": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": [
+        {
+          "id": "rsi",
+          "name": "RSI",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "macd",
+          "name": "MACD",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "bollinger",
+          "name": "布林带",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "ema",
+          "name": "EMA",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "volume",
+          "name": "成交量",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "sentimentAnalysis": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-28T00:01:44.896265",
+      "sub_nodes": null
+    },
+    "multiAgent": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-28T00:21:38.118943",
+      "sub_nodes": [
+        {
+          "id": "conservative",
+          "name": "保守派",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "aggressive",
+          "name": "激进派",
+          "enabled": false,
+          "status": "idle"
+        },
+        {
+          "id": "technical",
+          "name": "技术派",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "fundamental",
+          "name": "基本面派",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "risk_manager",
+          "name": "风险管理",
+          "enabled": false,
+          "status": "idle"
+        }
+      ]
+    },
+    "newsAnalysis": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-28T01:07:59.722648",
+      "sub_nodes": null
+    },
+    "whaleTracking": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": null
+    },
+    "vibeRules": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": "2026-01-27T23:49:54.386799",
+      "sub_nodes": [
+        {
+          "id": "vibe_vibe_1_1769571489",
+          "name": "我偏好做多，不喜欢做空",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "vibe_vibe_2_1769571550",
+          "name": "只在美股开盘时间交易",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "vibe_vibe_3_1769572083",
+          "name": "如果波动超过2个点，暂停交易，继续观察",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "riskControl": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": [
+        {
+          "id": "position_limit",
+          "name": "仓位限制",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "stop_loss",
+          "name": "止损",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "take_profit",
+          "name": "止盈",
+          "enabled": true,
+          "status": "idle"
+        },
+        {
+          "id": "circuit_breaker",
+          "name": "熔断",
+          "enabled": true,
+          "status": "idle"
+        }
+      ]
+    },
+    "executeTrade": {
+      "enabled": true,
+      "status": "idle",
+      "last_updated": null,
+      "sub_nodes": null
+    }
+  },
+  "updated_at": "2026-01-28T01:07:59.722662"
+}
