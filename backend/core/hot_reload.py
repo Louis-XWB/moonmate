@@ -1,6 +1,6 @@
 """
-配置热更新模块
-支持运行时动态更新配置，无需重启服务
+Configuration hot-reload module
+Supports runtime dynamic configuration updates without restarting the service
 """
 
 import os
@@ -23,7 +23,7 @@ logger = get_logger("hot_reload")
 
 @dataclass
 class ConfigChange:
-    """配置变更记录"""
+    """Configuration change record"""
     timestamp: datetime
     path: str
     old_value: Any
@@ -32,29 +32,29 @@ class ConfigChange:
 
 
 class ConfigValidator:
-    """配置验证器"""
+    """Configuration validator"""
     
     @staticmethod
     def validate_risk_config(config: Dict[str, Any]) -> tuple[bool, str]:
-        """验证风控配置"""
+        """Validate risk control configuration"""
         errors = []
         
-        # 验证止损比例
+        # Validate stop-loss ratio
         max_loss_per_trade = config.get("max_loss_per_trade", 0)
         if not 0 < max_loss_per_trade <= 10:
             errors.append(f"max_loss_per_trade must be between 0 and 10, got {max_loss_per_trade}")
         
-        # 验证日亏损限制
+        # Validate daily loss limit
         max_daily_loss = config.get("max_daily_loss", 0)
         if not 0 < max_daily_loss <= 20:
             errors.append(f"max_daily_loss must be between 0 and 20, got {max_daily_loss}")
         
-        # 验证仓位限制
+        # Validate position limit
         max_position_size = config.get("max_position_size", 0)
         if not 0 < max_position_size <= 100:
             errors.append(f"max_position_size must be between 0 and 100, got {max_position_size}")
         
-        # 验证杠杆
+        # Validate leverage
         max_leverage = config.get("max_leverage", 1)
         if not 1 <= max_leverage <= 20:
             errors.append(f"max_leverage must be between 1 and 20, got {max_leverage}")
@@ -65,15 +65,15 @@ class ConfigValidator:
     
     @staticmethod
     def validate_strategy_config(config: Dict[str, Any]) -> tuple[bool, str]:
-        """验证策略配置"""
+        """Validate strategy configuration"""
         errors = []
         
-        # 验证信号阈值
+        # Validate signal threshold
         signal_threshold = config.get("signal_threshold", 0)
         if not 0 <= signal_threshold <= 1:
             errors.append(f"signal_threshold must be between 0 and 1, got {signal_threshold}")
         
-        # 验证回看周期
+        # Validate lookback period
         lookback_period = config.get("lookback_period", 0)
         if not 5 <= lookback_period <= 500:
             errors.append(f"lookback_period must be between 5 and 500, got {lookback_period}")
@@ -84,10 +84,10 @@ class ConfigValidator:
     
     @staticmethod
     def validate_trading_config(config: Dict[str, Any]) -> tuple[bool, str]:
-        """验证交易配置"""
+        """Validate trading configuration"""
         errors = []
         
-        # 验证交易模式
+        # Validate trading mode
         mode = config.get("mode", "")
         if mode not in ["paper", "live"]:
             errors.append(f"mode must be 'paper' or 'live', got {mode}")
@@ -98,12 +98,12 @@ class ConfigValidator:
 
 
 class ConfigFileWatcher(FileSystemEventHandler):
-    """配置文件监视器"""
+    """Configuration file watcher"""
     
     def __init__(self, callback: Callable[[str], None]):
         self.callback = callback
         self._last_modified: Dict[str, float] = {}
-        self._debounce_seconds = 1.0  # 防抖动
+        self._debounce_seconds = 1.0  # Debounce
     
     def on_modified(self, event):
         if event.is_directory:
@@ -112,7 +112,7 @@ class ConfigFileWatcher(FileSystemEventHandler):
         if not event.src_path.endswith(('.yaml', '.yml', '.json')):
             return
         
-        # 防抖动
+        # Debounce
         now = datetime.now().timestamp()
         last = self._last_modified.get(event.src_path, 0)
         if now - last < self._debounce_seconds:
@@ -125,7 +125,7 @@ class ConfigFileWatcher(FileSystemEventHandler):
 
 
 class HotReloadManager:
-    """热更新管理器"""
+    """Hot-reload manager"""
     
     def __init__(
         self,
@@ -136,31 +136,31 @@ class HotReloadManager:
         self.auto_watch = auto_watch
         self.event_bus = get_event_bus()
         
-        # 当前配置
+        # Current configuration
         self._config: Dict[str, Any] = {}
         self._config_hash: Dict[str, str] = {}
         
-        # 变更历史
+        # Change history
         self._change_history: List[ConfigChange] = []
         
-        # 回调函数
+        # Callback functions
         self._callbacks: Dict[str, List[Callable]] = {}
         
-        # 验证器
+        # Validators
         self._validators: Dict[str, Callable] = {
             "risk": ConfigValidator.validate_risk_config,
             "strategy": ConfigValidator.validate_strategy_config,
             "trading": ConfigValidator.validate_trading_config
         }
         
-        # 文件监视器
+        # File watcher
         self._observer: Optional[Observer] = None
         
         if auto_watch:
             self._start_file_watcher()
     
     def _start_file_watcher(self):
-        """启动文件监视器"""
+        """Start file watcher"""
         if not self.config_dir.exists():
             logger.warning(f"Config directory not found: {self.config_dir}")
             return
@@ -172,23 +172,23 @@ class HotReloadManager:
         logger.info(f"Started watching config directory: {self.config_dir}")
     
     def _stop_file_watcher(self):
-        """停止文件监视器"""
+        """Stop file watcher"""
         if self._observer:
             self._observer.stop()
             self._observer.join()
             self._observer = None
     
     def _calculate_hash(self, data: Any) -> str:
-        """计算配置哈希"""
+        """Calculate configuration hash"""
         content = json.dumps(data, sort_keys=True)
         return hashlib.md5(content.encode()).hexdigest()
     
     def _on_file_changed(self, file_path: str):
-        """文件变更回调"""
+        """File change callback"""
         asyncio.create_task(self.reload_from_file(file_path))
     
     async def load_config(self, file_path: str) -> Dict[str, Any]:
-        """加载配置文件"""
+        """Load configuration file"""
         path = Path(file_path)
         
         if not path.exists():
@@ -205,15 +205,15 @@ class HotReloadManager:
         return config or {}
     
     async def reload_from_file(self, file_path: str):
-        """从文件重新加载配置"""
+        """Reload configuration from file"""
         try:
             new_config = await self.load_config(file_path)
             
-            # 检测变更
+            # Detect changes
             file_name = Path(file_path).stem
             old_config = self._config.get(file_name, {})
             
-            # 计算哈希检查是否真的有变化
+            # Calculate hash to check if content actually changed
             new_hash = self._calculate_hash(new_config)
             old_hash = self._config_hash.get(file_name, "")
             
@@ -221,7 +221,7 @@ class HotReloadManager:
                 logger.debug(f"Config unchanged: {file_name}")
                 return
             
-            # 验证配置
+            # Validate configuration
             validator = self._validators.get(file_name)
             if validator:
                 is_valid, error = validator(new_config)
@@ -233,20 +233,20 @@ class HotReloadManager:
                     ))
                     return
             
-            # 记录变更
+            # Record change
             changes = self._detect_changes(file_name, old_config, new_config)
             for change in changes:
                 self._change_history.append(change)
                 logger.info(f"Config changed: {change.path} = {change.new_value}")
             
-            # 更新配置
+            # Update configuration
             self._config[file_name] = new_config
             self._config_hash[file_name] = new_hash
             
-            # 触发回调
+            # Trigger callbacks
             await self._trigger_callbacks(file_name, new_config, changes)
             
-            # 发布事件
+            # Publish event
             await self.event_bus.publish(Event(
                 type=EventType.CONFIG_UPDATED,
                 data={
@@ -270,7 +270,7 @@ class HotReloadManager:
         new: Dict[str, Any],
         prefix: str = ""
     ) -> List[ConfigChange]:
-        """检测配置变更"""
+        """Detect configuration changes"""
         changes = []
         
         all_keys = set(old.keys()) | set(new.keys())
@@ -282,7 +282,7 @@ class HotReloadManager:
             
             if old_value != new_value:
                 if isinstance(old_value, dict) and isinstance(new_value, dict):
-                    # 递归检测嵌套变更
+                    # Recursively detect nested changes
                     changes.extend(self._detect_changes(section, old_value, new_value, path))
                 else:
                     changes.append(ConfigChange(
@@ -296,7 +296,7 @@ class HotReloadManager:
         return changes
     
     def register_callback(self, section: str, callback: Callable):
-        """注册配置变更回调"""
+        """Register configuration change callback"""
         if section not in self._callbacks:
             self._callbacks[section] = []
         self._callbacks[section].append(callback)
@@ -308,7 +308,7 @@ class HotReloadManager:
         config: Dict[str, Any],
         changes: List[ConfigChange]
     ):
-        """触发配置变更回调"""
+        """Trigger configuration change callbacks"""
         callbacks = self._callbacks.get(section, [])
         
         for callback in callbacks:
@@ -321,13 +321,13 @@ class HotReloadManager:
                 logger.error(f"Error in config callback: {e}")
     
     def get_config(self, section: str, key: str = None, default: Any = None) -> Any:
-        """获取配置值"""
+        """Get configuration value"""
         config = self._config.get(section, {})
         
         if key is None:
             return config
         
-        # 支持点号分隔的嵌套键
+        # Support dot-separated nested keys
         keys = key.split('.')
         value = config
         
@@ -346,12 +346,12 @@ class HotReloadManager:
         value: Any,
         persist: bool = True
     ) -> bool:
-        """通过 API 更新配置"""
+        """Update configuration via API"""
         try:
-            # 获取当前配置
+            # Get current configuration
             config = self._config.get(section, {}).copy()
             
-            # 更新值
+            # Update value
             keys = key.split('.')
             target = config
             
@@ -363,7 +363,7 @@ class HotReloadManager:
             old_value = target.get(keys[-1])
             target[keys[-1]] = value
             
-            # 验证
+            # Validate
             validator = self._validators.get(section)
             if validator:
                 is_valid, error = validator(config)
@@ -371,7 +371,7 @@ class HotReloadManager:
                     logger.error(f"Invalid config update: {error}")
                     return False
             
-            # 记录变更
+            # Record change
             change = ConfigChange(
                 timestamp=datetime.now(),
                 path=f"{section}.{key}",
@@ -381,15 +381,15 @@ class HotReloadManager:
             )
             self._change_history.append(change)
             
-            # 更新内存配置
+            # Update in-memory configuration
             self._config[section] = config
             self._config_hash[section] = self._calculate_hash(config)
             
-            # 持久化到文件
+            # Persist to file
             if persist:
                 await self._persist_config(section, config)
             
-            # 触发回调
+            # Trigger callbacks
             await self._trigger_callbacks(section, config, [change])
             
             logger.info(f"Config updated via API: {section}.{key} = {value}")
@@ -400,7 +400,7 @@ class HotReloadManager:
             return False
     
     async def _persist_config(self, section: str, config: Dict[str, Any]):
-        """持久化配置到文件"""
+        """Persist configuration to file"""
         file_path = self.config_dir / f"{section}.yaml"
         
         with open(file_path, 'w') as f:
@@ -413,13 +413,13 @@ class HotReloadManager:
         section: str = None,
         limit: int = 100
     ) -> List[Dict[str, Any]]:
-        """获取变更历史"""
+        """Get change history"""
         history = self._change_history
         
         if section:
             history = [c for c in history if c.path.startswith(section)]
         
-        # 按时间倒序
+        # Sort by time descending
         history = sorted(history, key=lambda x: x.timestamp, reverse=True)
         
         return [
@@ -434,18 +434,18 @@ class HotReloadManager:
         ]
     
     def rollback(self, change_index: int) -> bool:
-        """回滚配置变更"""
+        """Rollback configuration change"""
         if change_index >= len(self._change_history):
             return False
         
         change = self._change_history[change_index]
         
-        # 解析路径
+        # Parse path
         parts = change.path.split('.', 1)
         section = parts[0]
         key = parts[1] if len(parts) > 1 else None
         
-        # 回滚
+        # Rollback
         asyncio.create_task(
             self.update_config(section, key, change.old_value, persist=True)
         )
@@ -454,16 +454,16 @@ class HotReloadManager:
         return True
     
     def __del__(self):
-        """清理资源"""
+        """Clean up resources"""
         self._stop_file_watcher()
 
 
-# 全局热更新管理器
+# Global hot-reload manager
 _hot_reload_manager: Optional[HotReloadManager] = None
 
 
 def get_hot_reload_manager() -> HotReloadManager:
-    """获取全局热更新管理器"""
+    """Get global hot-reload manager"""
     global _hot_reload_manager
     if _hot_reload_manager is None:
         _hot_reload_manager = HotReloadManager()

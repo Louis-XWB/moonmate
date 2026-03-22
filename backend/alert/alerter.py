@@ -1,6 +1,6 @@
 """
-告警管理器
-统一管理告警规则、触发和通知
+Alert manager
+Unified management of alert rules, triggers, and notifications
 """
 
 import asyncio
@@ -18,7 +18,7 @@ logger = get_logger("alerter")
 
 
 class AlertLevel(str, Enum):
-    """告警级别"""
+    """Alert level"""
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -26,7 +26,7 @@ class AlertLevel(str, Enum):
 
 
 class AlertChannel(str, Enum):
-    """告警渠道"""
+    """Alert channel"""
     EMAIL = "email"
     TELEGRAM = "telegram"
     WEBHOOK = "webhook"
@@ -34,17 +34,17 @@ class AlertChannel(str, Enum):
 
 
 class AlertCategory(str, Enum):
-    """告警类别"""
-    TRADING = "trading"          # 交易相关
-    RISK = "risk"                # 风控相关
-    SYSTEM = "system"            # 系统相关
-    DATA = "data"                # 数据相关
-    SECURITY = "security"        # 安全相关
+    """Alert category"""
+    TRADING = "trading"          # Trading-related
+    RISK = "risk"                # Risk control-related
+    SYSTEM = "system"            # System-related
+    DATA = "data"                # Data-related
+    SECURITY = "security"        # Security-related
 
 
 @dataclass
 class Alert:
-    """告警实体"""
+    """Alert entity"""
     id: str
     level: AlertLevel
     category: AlertCategory
@@ -73,53 +73,53 @@ class Alert:
 
 @dataclass
 class AlertRule:
-    """告警规则"""
+    """Alert rule"""
     name: str
     condition: Callable[..., bool]
     level: AlertLevel
     category: AlertCategory
     title_template: str
     message_template: str
-    cooldown_seconds: int = 300  # 冷却时间，避免重复告警
+    cooldown_seconds: int = 300  # Cooldown period to avoid duplicate alerts
     channels: List[AlertChannel] = field(default_factory=lambda: [AlertChannel.CONSOLE])
     enabled: bool = True
     
     _last_triggered: Optional[datetime] = field(default=None, repr=False)
     
     def can_trigger(self) -> bool:
-        """检查是否可以触发（冷却时间）"""
+        """Check if can trigger (cooldown period)"""
         if self._last_triggered is None:
             return True
         elapsed = (datetime.now() - self._last_triggered).total_seconds()
         return elapsed >= self.cooldown_seconds
     
     def mark_triggered(self):
-        """标记已触发"""
+        """Mark as triggered"""
         self._last_triggered = datetime.now()
 
 
 class AlertChannelHandler(ABC):
-    """告警渠道处理器基类"""
+    """Alert channel handler base class"""
     
     @abstractmethod
     async def send(self, alert: Alert) -> bool:
-        """发送告警"""
+        """Send alert"""
         pass
     
     @abstractmethod
     def is_configured(self) -> bool:
-        """检查是否已配置"""
+        """Check if configured"""
         pass
 
 
 class ConsoleChannelHandler(AlertChannelHandler):
-    """控制台告警处理器"""
+    """Console alert channel handler"""
     
     LEVEL_COLORS = {
-        AlertLevel.INFO: "\033[94m",      # 蓝色
-        AlertLevel.WARNING: "\033[93m",   # 黄色
-        AlertLevel.ERROR: "\033[91m",     # 红色
-        AlertLevel.CRITICAL: "\033[95m",  # 紫色
+        AlertLevel.INFO: "\033[94m",      # Blue
+        AlertLevel.WARNING: "\033[93m",   # Yellow
+        AlertLevel.ERROR: "\033[91m",     # Red
+        AlertLevel.CRITICAL: "\033[95m",  # Purple
     }
     RESET = "\033[0m"
     
@@ -135,7 +135,7 @@ class ConsoleChannelHandler(AlertChannelHandler):
 
 
 class AlertManager:
-    """告警管理器"""
+    """Alert manager"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
@@ -148,126 +148,126 @@ class AlertManager:
         
         self._alert_counter = 0
         
-        # 初始化默认规则
+        # Initialize default rules
         self._init_default_rules()
     
     def _init_default_rules(self):
-        """初始化默认告警规则"""
+        """Initialize default alert rules"""
         
-        # 连续亏损告警
+        # Consecutive Losses Alert
         self.add_rule(AlertRule(
             name="consecutive_loss",
             condition=lambda losses: losses >= 3,
             level=AlertLevel.WARNING,
             category=AlertCategory.TRADING,
-            title_template="连续亏损告警",
-            message_template="已连续亏损 {losses} 次，请检查策略",
+            title_template="Consecutive Losses Alert",
+            message_template="Consecutive losses reached {losses} times, please check strategy",
             cooldown_seconds=1800,
             channels=[AlertChannel.CONSOLE, AlertChannel.TELEGRAM]
         ))
         
-        # 大额亏损告警
+        # Large Loss Alert
         self.add_rule(AlertRule(
             name="large_loss",
             condition=lambda loss_pct: loss_pct >= 5,
             level=AlertLevel.ERROR,
             category=AlertCategory.RISK,
-            title_template="大额亏损告警",
-            message_template="单笔亏损达到 {loss_pct:.2f}%，触发风控",
+            title_template="Large Loss Alert",
+            message_template="Single trade loss reached {loss_pct:.2f}%, risk control triggered",
             cooldown_seconds=300,
             channels=[AlertChannel.CONSOLE, AlertChannel.TELEGRAM, AlertChannel.EMAIL]
         ))
         
-        # 熔断告警
+        # Circuit Breaker Alert
         self.add_rule(AlertRule(
             name="circuit_breaker",
             condition=lambda triggered: triggered,
             level=AlertLevel.CRITICAL,
             category=AlertCategory.RISK,
-            title_template="熔断触发",
-            message_template="风控熔断已触发，交易暂停。原因：{reason}",
-            cooldown_seconds=0,  # 熔断不设冷却
+            title_template="Circuit Breaker Triggered",
+            message_template="Risk circuit breaker triggered, trading paused. Reason: {reason}",
+            cooldown_seconds=0,  # No cooldown for circuit breaker
             channels=[AlertChannel.CONSOLE, AlertChannel.TELEGRAM, AlertChannel.EMAIL]
         ))
         
-        # 数据源异常
+        # Data Source Error
         self.add_rule(AlertRule(
             name="data_source_error",
             condition=lambda error_count: error_count >= 3,
             level=AlertLevel.WARNING,
             category=AlertCategory.DATA,
-            title_template="数据源异常",
-            message_template="数据源 {source} 连续 {error_count} 次请求失败",
+            title_template="Data Source Error",
+            message_template="Data source {source} failed {error_count} consecutive requests",
             cooldown_seconds=600,
             channels=[AlertChannel.CONSOLE]
         ))
         
-        # API 限频告警
+        # API Rate LimitAlert
         self.add_rule(AlertRule(
             name="rate_limit",
             condition=lambda limited: limited,
             level=AlertLevel.WARNING,
             category=AlertCategory.SYSTEM,
-            title_template="API 限频",
-            message_template="API {api} 触发限频，将在 {retry_after}s 后重试",
+            title_template="API Rate Limit",
+            message_template="API {api} rate limited, will retry in {retry_after}s",
             cooldown_seconds=60,
             channels=[AlertChannel.CONSOLE]
         ))
         
-        # 价格异常告警
+        # PriceExceptionAlert
         self.add_rule(AlertRule(
             name="price_anomaly",
             condition=lambda change_pct: abs(change_pct) >= 10,
             level=AlertLevel.WARNING,
             category=AlertCategory.DATA,
-            title_template="价格异常波动",
-            message_template="{symbol} 价格在短时间内变动 {change_pct:.2f}%",
+            title_template="Abnormal Price Movement",
+            message_template="{symbol} price changed {change_pct:.2f}% in a short period",
             cooldown_seconds=300,
             channels=[AlertChannel.CONSOLE, AlertChannel.TELEGRAM]
         ))
         
-        # 订单执行失败
+        # Order Execution Failed
         self.add_rule(AlertRule(
             name="order_failed",
             condition=lambda failed: failed,
             level=AlertLevel.ERROR,
             category=AlertCategory.TRADING,
-            title_template="订单执行失败",
-            message_template="订单 {order_id} 执行失败：{error}",
+            title_template="Order Execution Failed",
+            message_template="Order {order_id} execution failed: {error}",
             cooldown_seconds=60,
             channels=[AlertChannel.CONSOLE, AlertChannel.TELEGRAM]
         ))
         
-        # 密钥即将过期
+        # API Key Expiring
         self.add_rule(AlertRule(
             name="key_expiring",
             condition=lambda days: days <= 7,
             level=AlertLevel.WARNING,
             category=AlertCategory.SECURITY,
-            title_template="API 密钥即将过期",
-            message_template="API 密钥将在 {days} 天后过期，请及时更换",
-            cooldown_seconds=86400,  # 每天最多提醒一次
+            title_template="API Key Expiring Soon",
+            message_template="API key will expire in {days} days, please renew promptly",
+            cooldown_seconds=86400,  # Remind at most once per day
             channels=[AlertChannel.CONSOLE, AlertChannel.EMAIL]
         ))
     
     def add_rule(self, rule: AlertRule):
-        """添加告警规则"""
+        """Add alert rule"""
         self.rules[rule.name] = rule
         logger.info(f"Alert rule added: {rule.name}")
     
     def remove_rule(self, name: str):
-        """移除告警规则"""
+        """Remove alert rule"""
         if name in self.rules:
             del self.rules[name]
             logger.info(f"Alert rule removed: {name}")
     
     def register_handler(self, channel: AlertChannel, handler: AlertChannelHandler):
-        """注册告警渠道处理器"""
+        """Register alert channel handler"""
         self.handlers[channel] = handler
         logger.info(f"Alert handler registered: {channel.value}")
     
     def _generate_alert_id(self) -> str:
-        """生成告警ID"""
+        """Generate alert ID"""
         self._alert_counter += 1
         return f"ALERT_{datetime.now().strftime('%Y%m%d%H%M%S')}_{self._alert_counter}"
     
@@ -276,7 +276,7 @@ class AlertManager:
         rule_name: str,
         **kwargs
     ) -> Optional[Alert]:
-        """检查告警规则"""
+        """Check alert rule"""
         if rule_name not in self.rules:
             logger.warning(f"Alert rule not found: {rule_name}")
             return None
@@ -289,9 +289,9 @@ class AlertManager:
         if not rule.can_trigger():
             return None
         
-        # 检查条件
+        # Check condition
         try:
-            # 获取条件函数的参数名
+            # Get condition function parameter names
             import inspect
             sig = inspect.signature(rule.condition)
             condition_kwargs = {
@@ -305,7 +305,7 @@ class AlertManager:
             logger.error(f"Error checking rule condition: {e}")
             return None
         
-        # 创建告警
+        # Create alert
         alert = Alert(
             id=self._generate_alert_id(),
             level=rule.level,
@@ -316,10 +316,10 @@ class AlertManager:
             metadata=kwargs
         )
         
-        # 标记已触发
+        # Mark as triggered
         rule.mark_triggered()
         
-        # 发送告警
+        # Send alert
         await self.send_alert(alert, rule.channels)
         
         return alert
@@ -329,20 +329,20 @@ class AlertManager:
         alert: Alert,
         channels: Optional[List[AlertChannel]] = None
     ):
-        """发送告警"""
+        """Send alert"""
         if channels is None:
             channels = [AlertChannel.CONSOLE]
         
-        # 记录历史
+        # Record history
         self.alert_history.append(alert)
         
-        # 发布事件
+        # Publish event
         await self.event_bus.publish(Event(
             type=EventType.ALERT,
             data=alert.to_dict()
         ))
         
-        # 发送到各渠道
+        # Send to channels
         for channel in channels:
             handler = self.handlers.get(channel)
             if handler and handler.is_configured():
@@ -361,7 +361,7 @@ class AlertManager:
         channels: Optional[List[AlertChannel]] = None,
         **metadata
     ):
-        """直接触发告警"""
+        """Trigger alert directly"""
         alert = Alert(
             id=self._generate_alert_id(),
             level=level,
@@ -374,7 +374,7 @@ class AlertManager:
         await self.send_alert(alert, channels)
     
     def acknowledge_alert(self, alert_id: str, by: str = "system"):
-        """确认告警"""
+        """Acknowledge alert"""
         for alert in self.alert_history:
             if alert.id == alert_id and not alert.acknowledged:
                 alert.acknowledged = True
@@ -389,7 +389,7 @@ class AlertManager:
         level: Optional[AlertLevel] = None,
         category: Optional[AlertCategory] = None
     ) -> List[Alert]:
-        """获取未确认的告警"""
+        """Get unacknowledged alerts"""
         alerts = [a for a in self.alert_history if not a.acknowledged]
         
         if level:
@@ -401,7 +401,7 @@ class AlertManager:
         return alerts
     
     def get_alert_stats(self) -> Dict[str, Any]:
-        """获取告警统计"""
+        """Get alert statistics"""
         total = len(self.alert_history)
         unacknowledged = len([a for a in self.alert_history if not a.acknowledged])
         
@@ -420,12 +420,12 @@ class AlertManager:
         }
 
 
-# 全局告警管理器
+# Global alert manager
 _alert_manager: Optional[AlertManager] = None
 
 
 def get_alert_manager() -> AlertManager:
-    """获取全局告警管理器"""
+    """Get global alert manager"""
     global _alert_manager
     if _alert_manager is None:
         _alert_manager = AlertManager()

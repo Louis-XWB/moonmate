@@ -1,9 +1,9 @@
 """
-Apify 数据抓取模块
-支持从 X (Twitter) 和 Reddit 抓取加密货币相关内容进行情绪分析
-支持手动模式和自动模式（每20分钟抓取一次）
+Apify Data Scraper Module
+Supports scraping cryptocurrency-related content from X (Twitter) and Reddit for sentiment analysis
+Supports manual mode and auto mode (scrapes every 20 minutes)
 
-使用 ApifyClientAsync 异步客户端
+Uses ApifyClientAsync async client
 """
 
 import asyncio
@@ -15,36 +15,36 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 import os
 
-# 使用官方 Apify 客户端
+# Using official Apify client
 from apify_client import ApifyClientAsync
 
 
 class ScraperMode(str, Enum):
-    """抓取模式"""
-    MANUAL = "manual"  # 手动模式：点击立即抓取
-    AUTO = "auto"      # 自动模式：每20分钟抓取一次
+    """Scraper mode"""
+    MANUAL = "manual"  # Manual mode: click to scrape immediately
+    AUTO = "auto"      # Auto mode: scrapes every 20 minutes
 
 
 class DataSource(str, Enum):
-    """数据源"""
+    """Data source"""
     TWITTER = "twitter"
     REDDIT = "reddit"
 
 
 @dataclass
 class SocialPost:
-    """社交媒体帖子数据模型（统一格式）"""
+    """Social media post model (unified format)"""
     id: str
     text: str
-    title: str  # Reddit 帖子标题，Twitter 为空
+    title: str  # Reddit post title, empty for Twitter
     author_name: str
     author_username: str
     created_at: str
-    source: str  # "twitter" 或 "reddit"
+    source: str  # "twitter" or "reddit"
     url: str = ""
-    score: int = 0  # 点赞数/upvotes
+    score: int = 0  # Likes/upvotes
     comments: int = 0
-    subreddit: str = ""  # Reddit 子版块
+    subreddit: str = ""  # Reddit subreddit
     
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -52,14 +52,14 @@ class SocialPost:
 
 @dataclass
 class ScrapeResult:
-    """抓取结果"""
+    """Scrape result"""
     success: bool
     posts: List[SocialPost] = field(default_factory=list)
     error: Optional[str] = None
     scraped_at: str = ""
     run_id: str = ""
     dataset_id: str = ""
-    source: str = ""  # "twitter" 或 "reddit"
+    source: str = ""  # "twitter" or "reddit"
     search_terms: List[str] = field(default_factory=list)
     total_count: int = 0
     
@@ -78,13 +78,13 @@ class ScrapeResult:
 
 
 class ApifyScraper:
-    """Apify 社交媒体数据抓取器"""
+    """Apify social media data scraper"""
     
     # Actor IDs
     REDDIT_ACTOR = "macrocosmos/reddit-scraper"
     TWITTER_ACTOR = "apidojo/tweet-scraper"
     
-    # 默认搜索关键词（加密货币相关）
+    # Default search keywords (cryptocurrency-related)
     DEFAULT_SEARCH_TERMS = [
         "Bitcoin",
         "Ethereum", 
@@ -93,7 +93,7 @@ class ApifyScraper:
         "BTC"
     ]
     
-    # 默认 Reddit 子版块
+    # Default Reddit subreddits
     DEFAULT_SUBREDDITS = [
         "Bitcoin",
         "CryptoCurrency",
@@ -101,37 +101,37 @@ class ApifyScraper:
         "CryptoMarkets"
     ]
     
-    # 自动模式间隔（秒）
-    AUTO_INTERVAL = 20 * 60  # 20分钟
+    # Auto mode interval (seconds)
+    AUTO_INTERVAL = 20 * 60  # 20 minutes
     
     def __init__(self, api_token: str = None):
         """
-        初始化抓取器
+        Initialize scraper
         
         Args:
-            api_token: Apify API Token，如果不提供则从环境变量读取
+            api_token: Apify API Token, If not provided, reads from environment variable
         """
         self.api_token = api_token or os.environ.get("APIFY_API_TOKEN", "")
         self._client: Optional[ApifyClientAsync] = None
         
-        # 状态
+        # Status
         self.mode = ScraperMode.MANUAL
-        self.data_source = DataSource.REDDIT  # 默认使用 Reddit（更稳定）
+        self.data_source = DataSource.REDDIT  # Default to Reddit (more stable)
         self._auto_task: Optional[asyncio.Task] = None
         self._is_running = False
         self._last_scrape_result: Optional[ScrapeResult] = None
         self._last_scrape_time: Optional[datetime] = None
         
-        # 回调函数
+        # Callback functions
         self._on_scrape_complete: Optional[Callable[[ScrapeResult], None]] = None
         
-        # 搜索配置
+        # Search configuration
         self.search_terms = self.DEFAULT_SEARCH_TERMS[:2]
         self.subreddits = self.DEFAULT_SUBREDDITS[:2]
         self.max_items = 10
     
     def _get_client(self) -> ApifyClientAsync:
-        """获取 Apify 客户端"""
+        """Get Apify client"""
         if self._client is None:
             self._client = ApifyClientAsync(token=self.api_token)
         return self._client
@@ -142,14 +142,14 @@ class ApifyScraper:
         max_items: int = None
     ) -> ScrapeResult:
         """
-        抓取 Reddit 帖子（使用官方 ApifyClientAsync）
+        Scrape Reddit posts (using official ApifyClientAsync)
         
         Args:
-            subreddits: 子版块列表
-            max_items: 最大抓取数量
+            subreddits: Subreddit list
+            max_items: Maximum scrape count
             
         Returns:
-            ScrapeResult: 抓取结果
+            ScrapeResult: Scrape result
         """
         if not self.api_token:
             return ScrapeResult(
@@ -165,7 +165,7 @@ class ApifyScraper:
         try:
             client = self._get_client()
             
-            # 准备 Actor 输入（参考你成功的脚本）
+            # Prepare Actor input
             actor_input = {
                 "subreddits": subs,
                 "limit": max_count,
@@ -174,10 +174,10 @@ class ApifyScraper:
             
             print(f"[Reddit Scraper] Calling actor={self.REDDIT_ACTOR} with input={actor_input}")
             
-            # 运行 Actor
+            # Run Actor
             run = await client.actor(self.REDDIT_ACTOR).call(
                 run_input=actor_input,
-                timeout_secs=120  # 2分钟超时
+                timeout_secs=120  # 2-minute timeout
             )
             
             run_id = run.get("id", "")
@@ -195,7 +195,7 @@ class ApifyScraper:
                     source="reddit"
                 )
             
-            # 从数据集获取结果
+            # Fetch results from dataset
             dataset_client = client.dataset(dataset_id)
             items = []
             
@@ -204,7 +204,7 @@ class ApifyScraper:
             
             print(f"[Reddit Scraper] Fetched {len(items)} raw items from dataset")
             
-            # 解析帖子数据
+            # Parse post data
             posts = []
             for item in items:
                 post = self._parse_reddit_post(item)
@@ -222,11 +222,11 @@ class ApifyScraper:
                 total_count=len(posts)
             )
             
-            # 更新状态
+            # Update status
             self._last_scrape_result = result
             self._last_scrape_time = datetime.now()
             
-            # 触发回调
+            # Trigger callbacks
             await self._trigger_callback(result)
             
             return result
@@ -243,17 +243,17 @@ class ApifyScraper:
             )
     
     def _parse_reddit_post(self, item: Dict[str, Any]) -> Optional[SocialPost]:
-        """解析 Reddit 帖子数据"""
+        """Parse Reddit post data"""
         try:
-            # 跳过无效数据
+            # Skip invalid data
             if not item:
                 return None
             
-            # 处理 isNsfw 字段名
+            # Handle isNsfw field name
             if 'isNsfw' in item:
                 item['is_nsfw'] = item.pop('isNsfw')
             
-            # macrocosmos/reddit-scraper 格式
+            # macrocosmos/reddit-scraper format
             post_id = item.get("id", "")
             title = item.get("title", "")
             body = item.get("body", "")
@@ -264,7 +264,7 @@ class ApifyScraper:
             num_comments = item.get("num_comments", 0)
             created_at = item.get("createdAt", "")
             
-            # 跳过空帖子
+            # Skip empty posts
             if not title and not body:
                 return None
             
@@ -292,14 +292,14 @@ class ApifyScraper:
         max_items: int = None
     ) -> ScrapeResult:
         """
-        抓取 Twitter 推文
+        Scrape Twitter tweets
         
         Args:
-            search_terms: 搜索关键词
-            max_items: 最大抓取数量
+            search_terms: Search keywords
+            max_items: Maximum scrape count
             
         Returns:
-            ScrapeResult: 抓取结果
+            ScrapeResult: Scrape result
         """
         if not self.api_token:
             return ScrapeResult(
@@ -343,7 +343,7 @@ class ApifyScraper:
                     source="twitter"
                 )
             
-            # 从数据集获取结果
+            # Fetch results from dataset
             dataset_client = client.dataset(dataset_id)
             items = []
             
@@ -352,7 +352,7 @@ class ApifyScraper:
             
             print(f"[Twitter Scraper] Fetched {len(items)} raw items from dataset")
             
-            # 解析推文数据
+            # Parse tweet data
             posts = []
             for item in items:
                 post = self._parse_twitter_post(item)
@@ -370,11 +370,11 @@ class ApifyScraper:
                 total_count=len(posts)
             )
             
-            # 更新状态
+            # Update status
             self._last_scrape_result = result
             self._last_scrape_time = datetime.now()
             
-            # 触发回调
+            # Trigger callbacks
             await self._trigger_callback(result)
             
             return result
@@ -391,9 +391,9 @@ class ApifyScraper:
             )
     
     def _parse_twitter_post(self, item: Dict[str, Any]) -> Optional[SocialPost]:
-        """解析 Twitter 推文数据"""
+        """Parse Twitter tweet data"""
         try:
-            # 跳过无效数据
+            # Skip invalid data
             if not item or item.get("noResults"):
                 return None
             
@@ -401,7 +401,7 @@ class ApifyScraper:
                 author = item.get("author", {})
                 return SocialPost(
                     id=str(item.get("id", "")),
-                    title="",  # Twitter 没有标题
+                    title="",  # Twitter has no title
                     text=item.get("text", ""),
                     author_name=author.get("name", "Unknown"),
                     author_username=author.get("userName", "unknown"),
@@ -420,10 +420,10 @@ class ApifyScraper:
     
     async def scrape(self) -> ScrapeResult:
         """
-        根据当前数据源设置进行抓取
+        Scrape based on current data source setting
         
         Returns:
-            ScrapeResult: 抓取结果
+            ScrapeResult: Scrape result
         """
         if self.data_source == DataSource.REDDIT:
             return await self.scrape_reddit()
@@ -431,7 +431,7 @@ class ApifyScraper:
             return await self.scrape_twitter()
     
     async def _trigger_callback(self, result: ScrapeResult):
-        """触发回调"""
+        """Trigger callback"""
         if self._on_scrape_complete:
             try:
                 if asyncio.iscoroutinefunction(self._on_scrape_complete):
@@ -442,7 +442,7 @@ class ApifyScraper:
                 print(f"Scrape callback error: {e}")
     
     def set_mode(self, mode: ScraperMode):
-        """设置抓取模式"""
+        """Set scraper mode"""
         self.mode = mode
         
         if mode == ScraperMode.AUTO and not self._is_running:
@@ -451,11 +451,11 @@ class ApifyScraper:
             self.stop_auto_scrape()
     
     def set_data_source(self, source: DataSource):
-        """设置数据源"""
+        """Set data source"""
         self.data_source = source
     
     def start_auto_scrape(self):
-        """启动自动抓取"""
+        """Start auto scraping"""
         if self._is_running:
             return
         
@@ -464,7 +464,7 @@ class ApifyScraper:
         print(f"Auto scrape started, interval: {self.AUTO_INTERVAL}s, source: {self.data_source.value}")
     
     def stop_auto_scrape(self):
-        """停止自动抓取"""
+        """Stop auto scraping"""
         self._is_running = False
         if self._auto_task:
             self._auto_task.cancel()
@@ -472,7 +472,7 @@ class ApifyScraper:
         print("Auto scrape stopped")
     
     async def _auto_scrape_loop(self):
-        """自动抓取循环"""
+        """Auto scrape loop"""
         while self._is_running:
             try:
                 print(f"Auto scraping at {datetime.now().isoformat()}")
@@ -483,19 +483,19 @@ class ApifyScraper:
             await asyncio.sleep(self.AUTO_INTERVAL)
     
     def on_scrape_complete(self, callback: Callable[[ScrapeResult], None]):
-        """设置抓取完成回调"""
+        """Set scrape completion callback"""
         self._on_scrape_complete = callback
     
     def get_last_result(self) -> Optional[ScrapeResult]:
-        """获取最近一次抓取结果"""
+        """Get last scrape result"""
         return self._last_scrape_result
     
     def get_last_scrape_time(self) -> Optional[datetime]:
-        """获取最近一次抓取时间"""
+        """Get last scrape time"""
         return self._last_scrape_time
     
     def get_status(self) -> Dict[str, Any]:
-        """获取抓取器状态"""
+        """Get scraper status"""
         return {
             "mode": self.mode.value,
             "data_source": self.data_source.value,
@@ -511,16 +511,16 @@ class ApifyScraper:
         }
     
     async def close(self):
-        """关闭抓取器"""
+        """Close scraper"""
         self.stop_auto_scrape()
 
 
-# 全局抓取器实例
+# Global scraper instance
 _scraper: Optional[ApifyScraper] = None
 
 
 def get_scraper(api_token: str = None) -> ApifyScraper:
-    """获取全局抓取器实例"""
+    """Get global scraper instance"""
     global _scraper
     if _scraper is None:
         _scraper = ApifyScraper(api_token)
@@ -528,7 +528,7 @@ def get_scraper(api_token: str = None) -> ApifyScraper:
 
 
 def set_scraper_token(api_token: str):
-    """设置抓取器 Token"""
+    """Set scraper token"""
     global _scraper
     if _scraper:
         _scraper.api_token = api_token

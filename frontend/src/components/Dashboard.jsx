@@ -1,6 +1,6 @@
 import React from 'react'
-import { 
-  TrendingUp, TrendingDown, DollarSign, 
+import {
+  TrendingUp, TrendingDown, DollarSign,
   Activity, Target, AlertCircle, CheckCircle
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
@@ -12,7 +12,7 @@ function StatCard({ title, value, change, icon: Icon, color = 'primary' }) {
     danger: 'bg-red-600',
     warning: 'bg-amber-600',
   }
-  
+
   return (
     <div className="card">
       <div className="flex items-start justify-between">
@@ -37,43 +37,43 @@ function SignalIndicator({ signal }) {
   if (!signal) {
     return (
       <div className="card">
-        <h3 className="text-slate-400 text-sm mb-2">当前信号</h3>
+        <h3 className="text-slate-400 text-sm mb-2">Current Signal</h3>
         <div className="text-center py-4 text-slate-500">
-          暂无信号
+          No signal available
         </div>
       </div>
     )
   }
-  
+
   const directionColors = {
     long: 'text-emerald-400 bg-emerald-400/10',
     short: 'text-red-400 bg-red-400/10',
     neutral: 'text-slate-400 bg-slate-400/10',
     close: 'text-amber-400 bg-amber-400/10',
   }
-  
+
   const directionLabels = {
-    long: '做多',
-    short: '做空',
-    neutral: '观望',
-    close: '平仓',
+    long: 'Long',
+    short: 'Short',
+    neutral: 'Hold',
+    close: 'Close',
   }
-  
+
   return (
     <div className="card">
-      <h3 className="text-slate-400 text-sm mb-3">当前信号</h3>
+      <h3 className="text-slate-400 text-sm mb-3">Current Signal</h3>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">方向</span>
+          <span className="text-slate-400">Direction</span>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${directionColors[signal.direction]}`}>
             {directionLabels[signal.direction] || signal.direction}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">强度</span>
+          <span className="text-slate-400">Strength</span>
           <div className="flex items-center space-x-2">
             <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary-500 rounded-full"
                 style={{ width: `${signal.strength * 100}%` }}
               />
@@ -82,7 +82,7 @@ function SignalIndicator({ signal }) {
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">置信度</span>
+          <span className="text-slate-400">Confidence</span>
           <span className="text-sm">{(signal.confidence * 100).toFixed(0)}%</span>
         </div>
         {signal.reason && (
@@ -96,7 +96,7 @@ function SignalIndicator({ signal }) {
 }
 
 function Dashboard({ status, ticker, signal, isRunning }) {
-  // 模拟收益曲线数据
+  // Simulated equity curve data
   const equityData = React.useMemo(() => {
     const data = []
     let value = 10000
@@ -112,43 +112,43 @@ function Dashboard({ status, ticker, signal, isRunning }) {
 
   const stats = status?.statistics || {}
   const riskState = status?.risk_state || {}
-  
+
   return (
     <div className="space-y-6">
-      {/* 统计卡片 */}
+      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="账户余额" 
+        <StatCard
+          title="Account Balance"
           value={`$${(10000 + (stats.total_pnl || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}`}
           change={((stats.total_pnl || 0) / 100).toFixed(2)}
           icon={DollarSign}
           color="primary"
         />
-        <StatCard 
-          title="总盈亏" 
+        <StatCard
+          title="Total PnL"
           value={`$${(stats.total_pnl || 0).toFixed(2)}`}
           icon={stats.total_pnl >= 0 ? TrendingUp : TrendingDown}
           color={stats.total_pnl >= 0 ? 'success' : 'danger'}
         />
-        <StatCard 
-          title="活跃持仓" 
+        <StatCard
+          title="Active Positions"
           value={stats.active_positions || 0}
           icon={Activity}
           color="warning"
         />
-        <StatCard 
-          title="成交订单" 
+        <StatCard
+          title="Filled Orders"
           value={stats.filled_orders || 0}
           icon={Target}
           color="primary"
         />
       </div>
 
-      {/* 主要内容区 */}
+      {/* Main content area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 收益曲线 */}
+        {/* Equity curve */}
         <div className="lg:col-span-2 card">
-          <h3 className="text-slate-400 text-sm mb-4">收益曲线</h3>
+          <h3 className="text-slate-400 text-sm mb-4">Equity Curve</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={equityData}>
@@ -158,30 +158,30 @@ function Dashboard({ status, ticker, signal, isRunning }) {
                     <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#64748b" 
+                <XAxis
+                  dataKey="time"
+                  stroke="#64748b"
                   fontSize={12}
                   tickLine={false}
                 />
-                <YAxis 
-                  stroke="#64748b" 
+                <YAxis
+                  stroke="#64748b"
                   fontSize={12}
                   tickLine={false}
                   tickFormatter={(value) => `$${(value/1000).toFixed(1)}k`}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1e293b', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
                     border: '1px solid #334155',
                     borderRadius: '8px'
                   }}
                   labelStyle={{ color: '#94a3b8' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#0ea5e9" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#0ea5e9"
                   fillOpacity={1}
                   fill="url(#colorValue)"
                 />
@@ -190,15 +190,15 @@ function Dashboard({ status, ticker, signal, isRunning }) {
           </div>
         </div>
 
-        {/* 信号指示器 */}
+        {/* Signal indicator */}
         <SignalIndicator signal={signal} />
       </div>
 
-      {/* 行情和风控状态 */}
+      {/* Market data and risk status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 实时行情 */}
+        {/* Live market data */}
         <div className="card">
-          <h3 className="text-slate-400 text-sm mb-4">实时行情</h3>
+          <h3 className="text-slate-400 text-sm mb-4">Live Market Data</h3>
           {ticker ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -211,66 +211,66 @@ function Dashboard({ status, ticker, signal, isRunning }) {
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-slate-400">24h最高</span>
+                  <span className="text-slate-400">24h High</span>
                   <p className="font-medium">${ticker.high_24h?.toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">24h最低</span>
+                  <span className="text-slate-400">24h Low</span>
                   <p className="font-medium">${ticker.low_24h?.toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">24h成交量</span>
+                  <span className="text-slate-400">24h Volume</span>
                   <p className="font-medium">{ticker.volume_24h?.toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">买卖价差</span>
+                  <span className="text-slate-400">Bid-Ask Spread</span>
                   <p className="font-medium">{ticker.spread?.toFixed(4)}%</p>
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-center py-8 text-slate-500">
-              等待行情数据...
+              Waiting for market data...
             </div>
           )}
         </div>
 
-        {/* 风控状态 */}
+        {/* Risk control status */}
         <div className="card">
-          <h3 className="text-slate-400 text-sm mb-4">风控状态</h3>
+          <h3 className="text-slate-400 text-sm mb-4">Risk Control Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">交易状态</span>
+              <span className="text-slate-400">Trading Status</span>
               <span className={`flex items-center space-x-1 ${riskState.is_trading_allowed ? 'text-emerald-400' : 'text-red-400'}`}>
                 {riskState.is_trading_allowed ? (
-                  <><CheckCircle className="w-4 h-4" /><span>允许交易</span></>
+                  <><CheckCircle className="w-4 h-4" /><span>Trading Allowed</span></>
                 ) : (
-                  <><AlertCircle className="w-4 h-4" /><span>禁止交易</span></>
+                  <><AlertCircle className="w-4 h-4" /><span>Trading Suspended</span></>
                 )}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">熔断状态</span>
+              <span className="text-slate-400">Circuit Breaker</span>
               <span className={riskState.circuit_breaker_active ? 'text-red-400' : 'text-emerald-400'}>
-                {riskState.circuit_breaker_active ? '已触发' : '正常'}
+                {riskState.circuit_breaker_active ? 'Triggered' : 'Normal'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">今日盈亏</span>
+              <span className="text-slate-400">Daily PnL</span>
               <span className={riskState.daily_pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                 ${riskState.daily_pnl?.toFixed(2) || '0.00'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">当前回撤</span>
+              <span className="text-slate-400">Current Drawdown</span>
               <span className={riskState.current_drawdown > 5 ? 'text-amber-400' : 'text-slate-300'}>
                 {riskState.current_drawdown?.toFixed(2) || '0.00'}%
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">连续亏损</span>
+              <span className="text-slate-400">Consecutive Losses</span>
               <span className={riskState.consecutive_losses > 3 ? 'text-amber-400' : 'text-slate-300'}>
-                {riskState.consecutive_losses || 0} 次
+                {riskState.consecutive_losses || 0}
               </span>
             </div>
           </div>

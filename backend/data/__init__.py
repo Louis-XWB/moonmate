@@ -1,5 +1,5 @@
 # Auto Trading Agent - Data Layer
-# 数据层：行情数据、订单数据、持仓数据的统一模型
+# Data layer: unified models for market data, order data, and position data
 
 from .models import (
     Ticker, OrderBook, Trade, Kline, 

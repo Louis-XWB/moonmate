@@ -31,7 +31,7 @@ const MultiAgentPanel = () => {
 
   useEffect(() => {
     if (autoRefresh) {
-      const interval = setInterval(fetchConsensus, 60000); // 每分钟刷新
+      const interval = setInterval(fetchConsensus, 60000); // Refresh every minute
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);
@@ -66,11 +66,11 @@ const MultiAgentPanel = () => {
 
   const getDecisionText = (decision) => {
     const map = {
-      'strong_long': '强烈做多',
-      'long': '做多',
-      'hold': '观望',
-      'short': '做空',
-      'strong_short': '强烈做空'
+      'strong_long': 'Strong Long',
+      'long': 'Long',
+      'hold': 'Hold',
+      'short': 'Short',
+      'strong_short': 'Strong Short'
     };
     return map[decision] || decision;
   };
@@ -88,13 +88,13 @@ const MultiAgentPanel = () => {
 
   return (
     <div className="space-y-6">
-      {/* 标题和控制 */}
+      {/* Title and controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-purple-400" />
-          <h2 className="text-2xl font-bold text-white">AI 委员会</h2>
+          <h2 className="text-2xl font-bold text-white">AI Committee</h2>
           <span className="px-3 py-1 text-xs font-semibold text-purple-300 bg-purple-900/30 border border-purple-500/50 rounded-full">
-            创新功能
+            Experimental
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -105,7 +105,7 @@ const MultiAgentPanel = () => {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500"
             />
-            自动刷新
+            Auto Refresh
           </label>
           <button
             onClick={fetchConsensus}
@@ -113,12 +113,12 @@ const MultiAgentPanel = () => {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            刷新
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* 错误提示 */}
+      {/* Error alert */}
       {error && (
         <div className="flex items-center gap-2 p-4 text-red-300 bg-red-900/20 border border-red-500/50 rounded-lg">
           <AlertCircle className="w-5 h-5" />
@@ -126,38 +126,38 @@ const MultiAgentPanel = () => {
         </div>
       )}
 
-      {/* 加载状态 */}
+      {/* Loading state */}
       {loading && !consensus && (
         <div className="flex items-center justify-center p-12">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="w-8 h-8 text-purple-400 animate-spin" />
-            <p className="text-gray-400">AI 委员会正在讨论...</p>
+            <p className="text-gray-400">AI Committee is deliberating...</p>
           </div>
         </div>
       )}
 
-      {/* 共识结果 */}
+      {/* Consensus results */}
       {consensus && (
         <div className="space-y-6">
-          {/* 最终决策卡片 */}
+          {/* Final decision card */}
           <div className="p-6 bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/50 rounded-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">🎯 最终决策</h3>
+              <h3 className="text-lg font-semibold text-white">🎯 Final Decision</h3>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
                 <span className="text-sm text-gray-300">
-                  {new Date(consensus.timestamp).toLocaleString('zh-CN')}
+                  {new Date(consensus.timestamp).toLocaleString('en-US')}
                 </span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 mb-4">
               <div className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${getDecisionColor(consensus.final_decision)}`}>
                 {getDecisionIcon(consensus.final_decision)}
                 <span className="text-lg font-bold">{getDecisionText(consensus.final_decision)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">置信度:</span>
+                <span className="text-sm text-gray-400">Confidence:</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
                     <div
@@ -174,9 +174,9 @@ const MultiAgentPanel = () => {
               <p className="text-sm text-gray-300">{consensus.debate_summary}</p>
             </div>
 
-            {/* 投票分布 */}
+            {/* Vote distribution */}
             <div className="mt-4 flex items-center gap-4">
-              <span className="text-sm text-gray-400">投票分布:</span>
+              <span className="text-sm text-gray-400">Vote Distribution:</span>
               <div className="flex items-center gap-2">
                 {Object.entries(consensus.vote_distribution).map(([decision, count]) => (
                   <div key={decision} className="flex items-center gap-1 px-2 py-1 bg-gray-800/50 rounded">
@@ -188,9 +188,9 @@ const MultiAgentPanel = () => {
             </div>
           </div>
 
-          {/* Agent 意见列表 */}
+          {/* Agent opinions list */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-white">🗳️ Agent 意见</h3>
+            <h3 className="text-lg font-semibold text-white">🗳️ Agent Opinions</h3>
             {consensus.agent_opinions.map((opinion, index) => (
               <div
                 key={index}
@@ -210,7 +210,7 @@ const MultiAgentPanel = () => {
                       <span className="text-sm font-semibold">{getDecisionText(opinion.decision)}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">置信度</p>
+                      <p className="text-xs text-gray-400">Confidence</p>
                       <p className="text-sm font-semibold text-white">{(opinion.confidence * 100).toFixed(0)}%</p>
                     </div>
                   </div>

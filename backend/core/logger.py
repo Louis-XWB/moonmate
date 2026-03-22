@@ -1,6 +1,6 @@
 """
-日志模块
-统一日志格式，支持文件和控制台输出
+Logging module
+Unified log format, supports file and console output
 """
 
 import logging
@@ -11,14 +11,14 @@ from typing import Optional
 
 
 class ColoredFormatter(logging.Formatter):
-    """彩色日志格式化器"""
+    """Colored log formatter"""
     
     COLORS = {
-        'DEBUG': '\033[36m',     # 青色
-        'INFO': '\033[32m',      # 绿色
-        'WARNING': '\033[33m',   # 黄色
-        'ERROR': '\033[31m',     # 红色
-        'CRITICAL': '\033[35m',  # 紫色
+        'DEBUG': '\033[36m',     # Cyan
+        'INFO': '\033[32m',      # Green
+        'WARNING': '\033[33m',   # Yellow
+        'ERROR': '\033[31m',     # Red
+        'CRITICAL': '\033[35m',  # Purple
     }
     RESET = '\033[0m'
     
@@ -35,26 +35,26 @@ def setup_logger(
     console: bool = True,
     file: bool = True
 ) -> logging.Logger:
-    """设置日志器"""
+    """Set up logger"""
     
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
-    # 清除现有处理器
+    # Clear existing handlers
     logger.handlers.clear()
     
-    # 日志格式
+    # Log format
     log_format = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
     
-    # 控制台处理器
+    # Console handler
     if console:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(level)
         console_handler.setFormatter(ColoredFormatter(log_format, date_format))
         logger.addHandler(console_handler)
     
-    # 文件处理器
+    # File handler
     if file:
         Path(log_dir).mkdir(parents=True, exist_ok=True)
         log_file = Path(log_dir) / f"{name}_{datetime.now().strftime('%Y%m%d')}.log"
@@ -66,12 +66,12 @@ def setup_logger(
     return logger
 
 
-# 全局日志器
+# Global loggers
 _loggers: dict = {}
 
 
 def get_logger(name: str = "trading_agent") -> logging.Logger:
-    """获取日志器"""
+    """Get logger"""
     if name not in _loggers:
         _loggers[name] = setup_logger(name)
     return _loggers[name]

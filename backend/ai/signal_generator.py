@@ -1,6 +1,6 @@
 """
-AI信号生成器
-使用LLM分析市场数据和新闻，生成交易信号
+AI Signal Generator
+Uses LLM to analyze market data and news to generate trading signals
 """
 
 import os
@@ -17,7 +17,7 @@ logger = get_logger("ai_signal")
 
 
 class AISignalGenerator:
-    """AI信号生成器"""
+    """AI signal generator"""
     
     def __init__(
         self,
@@ -30,9 +30,9 @@ class AISignalGenerator:
         self.confidence_threshold = confidence_threshold
         self.client = OpenAI()
         
-        # 信号缓存
+        # Signal cache
         self._signal_cache: Dict[str, Signal] = {}
-        self._cache_ttl: int = 300  # 5分钟缓存
+        self._cache_ttl: int = 300  # 5-minute cache
     
     async def generate_signal(
         self,
@@ -43,41 +43,41 @@ class AISignalGenerator:
         news_impacts: Optional[List[Dict]] = None,
         context: Optional[Dict[str, Any]] = None
     ) -> Signal:
-        """生成交易信号"""
+        """Generate trading signal"""
         
-        # 检查缓存
+        # Check cache
         cache_key = f"{symbol}_{datetime.now().strftime('%Y%m%d%H%M')}"
         if cache_key in self._signal_cache:
             cached = self._signal_cache[cache_key]
             if cached.is_valid:
                 return cached
         
-        # 准备市场数据摘要
+        # Prepare market data summary
         market_summary = self._prepare_market_summary(ticker, klines)
         
-        # 准备新闻摘要
+        # Prepare news summary
         news_summary = ""
         if news_impacts:
-            # 使用AI分析后的新闻影响
+            # Use AI-analyzed news impact
             news_summary = self._prepare_news_impact_summary(news_impacts)
         elif news:
-            # 备选：使用原始新闻标题
+            # Fallback: use raw news titles
             news_summary = "\n".join([f"- {n}" for n in news[:5]])
         
-        # 构建提示词
+        # Build prompt
         prompt = self._build_prompt(symbol, market_summary, news_summary, context)
         
         try:
-            # 调用LLM
+            # Call LLM
             response = await asyncio.to_thread(
                 self._call_llm,
                 prompt
             )
             
-            # 解析响应
+            # Parse response
             signal = self._parse_response(symbol, response, ticker)
             
-            # 缓存信号
+            # Cache the signal
             self._signal_cache[cache_key] = signal
             
             logger.info(f"Generated signal for {symbol}: {signal.direction} (confidence: {signal.confidence:.2f})")
@@ -85,7 +85,7 @@ class AISignalGenerator:
             
         except Exception as e:
             logger.error(f"AI signal generation error: {e}")
-            # 返回中性信号
+            # Return neutral signal
             return Signal(
                 symbol=symbol,
                 direction=SignalDirection.NEUTRAL,
@@ -96,19 +96,19 @@ class AISignalGenerator:
             )
     
     def _prepare_market_summary(self, ticker: Ticker, klines: List[Kline]) -> str:
-        """准备市场数据摘要"""
-        # 计算技术指标
+        """Prepare market data summary"""
+        # Calculate technical indicators
         closes = [k.close for k in klines[-20:]]
         
-        # 简单移动平均
+        # Simple moving average
         sma_5 = sum(closes[-5:]) / 5 if len(closes) >= 5 else closes[-1]
         sma_20 = sum(closes[-20:]) / 20 if len(closes) >= 20 else closes[-1]
         
-        # 价格变化
+        # Price change
         price_change_1h = (closes[-1] - closes[-2]) / closes[-2] * 100 if len(closes) >= 2 else 0
         price_change_24h = ticker.change_24h
         
-        # 波动率
+        # Volatility
         if len(closes) >= 20:
             returns = [(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, len(closes))]
             volatility = (sum(r**2 for r in returns) / len(returns)) ** 0.5 * 100
@@ -116,31 +116,31 @@ class AISignalGenerator:
             volatility = 0
         
         summary = f"""
-当前价格: ${ticker.last_price:,.2f}
-24小时涨跌: {price_change_24h:+.2f}%
-1小时涨跌: {price_change_1h:+.2f}%
-24小时成交量: {ticker.volume_24h:,.0f}
-24小时最高: ${ticker.high_24h:,.2f}
-24小时最低: ${ticker.low_24h:,.2f}
-买卖价差: {ticker.spread:.4f}%
+Current Price: ${ticker.last_price:,.2f}
+24h Change: {price_change_24h:+.2f}%
+1h Change: {price_change_1h:+.2f}%
+24h Volume: {ticker.volume_24h:,.0f}
+24h High: ${ticker.high_24h:,.2f}
+24h Low: ${ticker.low_24h:,.2f}
+Bid-Ask Spread: {ticker.spread:.4f}%
 SMA5: ${sma_5:,.2f}
 SMA20: ${sma_20:,.2f}
-波动率: {volatility:.2f}%
-趋势: {'上涨' if sma_5 > sma_20 else '下跌' if sma_5 < sma_20 else '横盘'}
+Volatility: {volatility:.2f}%
+Trend: {'Uptrend' if sma_5 > sma_20 else 'Downtrend' if sma_5 < sma_20 else 'Sideways'}
 """
         return summary.strip()
     
     def _prepare_news_impact_summary(self, news_impacts: List[Dict]) -> str:
-        """准备新闻影响摘要"""
+        """Prepare news impact summary"""
         if not news_impacts:
             return ""
         
-        # 按星级排序，只保留31星以上的重要新闻
+        # Sort by star rating, keep only news with 3+ stars
         important_news = sorted(
             [n for n in news_impacts if n.get('importance_stars', 0) >= 3],
             key=lambda x: x.get('importance_stars', 0),
             reverse=True
-        )[:5]  # 最多5条
+        )[:5]  # Maximum 5 entries
         
         if not important_news:
             return ""
@@ -174,9 +174,9 @@ SMA20: ${sma_20:,.2f}
         news_summary: str,
         context: Optional[Dict[str, Any]]
     ) -> str:
-        """构建提示词"""
+        """Build prompt"""
         
-        # 获取Vibe策略
+        # Get Vibe strategy
         vibe_prompt = ""
         try:
             from backend.strategy.vibe_strategy import get_vibe_manager
@@ -185,43 +185,43 @@ SMA20: ${sma_20:,.2f}
         except Exception as e:
             logger.warning(f"Failed to load vibe rules: {e}")
         
-        system_prompt = """你是一个专业的加密货币交易分析师。基于提供的市场数据和新闻，分析当前市场状况并给出交易建议。
+        system_prompt = """You are a professional cryptocurrency trading analyst. Based on the provided market data and news, analyze the current market conditions and provide trading recommendations.
 
-你必须以JSON格式输出，包含以下字段：
-- direction: "long"(做多), "short"(做空), "close"(平仓), 或 "neutral"(观望)
-- strength: 0-1之间的数值，表示信号强度
-- confidence: 0-1之间的数值，表示你对这个判断的置信度
-- reason: 简短解释你的判断理由
-- evidence: 支持你判断的证据列表
+You must output in JSON format with the following fields:
+- direction: "long", "short", "close", or "neutral"
+- strength: a value between 0-1 indicating signal strength
+- confidence: a value between 0-1 indicating your confidence in the judgment
+- reason: a brief explanation of your reasoning
+- evidence: a list of evidence supporting your judgment
 
-注意事项：
-1. 保持客观，不要过度自信
-2. 如果数据不足或市场不明朗，选择"neutral"
-3. 考虑风险，不要在高波动时给出强信号
-4. 证据必须来自提供的数据，不要编造
-5. **重要：必须严格遵守用户的策略偏好（Vibe），这是最高优先级的约束**"""
+Guidelines:
+1. Stay objective, do not be overconfident
+2. If data is insufficient or the market is unclear, choose "neutral"
+3. Consider risk, do not give strong signals during high volatility
+4. Evidence must come from the provided data, do not fabricate
+5. **Important: strictly follow the user's strategy preferences (Vibe) as the highest priority constraint**"""
 
         user_prompt = f"""
-请分析以下{symbol}的市场数据：
+Please analyze the following {symbol} market data:
 
-【市场数据】
+[Market Data]
 {market_summary}
 
-【相关新闻】
-{news_summary if news_summary else "暂无相关新闻"}
+[Related News]
+{news_summary if news_summary else "No related news available"}
 
-【额外上下文】
-{json.dumps(context, ensure_ascii=False) if context else "无"}
+[Additional Context]
+{json.dumps(context, ensure_ascii=False) if context else "None"}
 
 {vibe_prompt if vibe_prompt else ""}
 
-请给出你的交易建议（JSON格式）：
+Please provide your trading recommendation (JSON format):
 """
         
         return f"{system_prompt}\n\n{user_prompt}"
     
     def _call_llm(self, prompt: str) -> str:
-        """调用LLM"""
+        """Call LLM"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -233,9 +233,9 @@ SMA20: ${sma_20:,.2f}
         return response.choices[0].message.content
     
     def _parse_response(self, symbol: str, response: str, ticker: Ticker) -> Signal:
-        """解析LLM响应"""
+        """Parse LLM response"""
         try:
-            # 提取JSON部分
+            # Extract JSON part
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
             if json_start >= 0 and json_end > json_start:
@@ -244,7 +244,7 @@ SMA20: ${sma_20:,.2f}
             else:
                 raise ValueError("No JSON found in response")
             
-            # 解析方向
+            # Parse direction
             direction_map = {
                 "long": SignalDirection.LONG,
                 "short": SignalDirection.SHORT,
@@ -253,7 +253,7 @@ SMA20: ${sma_20:,.2f}
             }
             direction = direction_map.get(data.get("direction", "neutral"), SignalDirection.NEUTRAL)
             
-            # 创建信号
+            # Create signal
             signal = Signal(
                 symbol=symbol,
                 direction=direction,
@@ -266,10 +266,10 @@ SMA20: ${sma_20:,.2f}
                 ttl=300
             )
             
-            # 设置止损止盈（基于当前价格）
+            # Set stop-loss/take-profit (based on current price)
             if direction == SignalDirection.LONG:
-                signal.stop_loss = ticker.last_price * 0.98  # 2%止损
-                signal.take_profit = ticker.last_price * 1.05  # 5%止盈
+                signal.stop_loss = ticker.last_price * 0.98  # 2% stop-loss
+                signal.take_profit = ticker.last_price * 1.05  # 5% take-profit
             elif direction == SignalDirection.SHORT:
                 signal.stop_loss = ticker.last_price * 1.02
                 signal.take_profit = ticker.last_price * 0.95
@@ -288,5 +288,5 @@ SMA20: ${sma_20:,.2f}
             )
     
     def clear_cache(self):
-        """清除缓存"""
+        """Clear cache"""
         self._signal_cache.clear()

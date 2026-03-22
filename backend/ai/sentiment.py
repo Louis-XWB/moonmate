@@ -1,6 +1,6 @@
 """
-情绪分析模块
-使用LLM分析市场情绪和社交媒体热度
+Sentiment Analysis Module
+Uses LLM to analyze market sentiment and social media trends
 """
 
 import asyncio
@@ -17,19 +17,19 @@ logger = get_logger("sentiment")
 
 
 class SentimentResult(BaseModel):
-    """情绪分析结果"""
+    """Sentiment analysis result"""
     symbol: str
     sentiment: str = Field(..., description="bullish/bearish/neutral")
-    score: float = Field(default=0, ge=-1, le=1, description="情绪分数 -1到1")
+    score: float = Field(default=0, ge=-1, le=1, description="Sentiment score from -1 to 1")
     confidence: float = Field(default=0.5, ge=0, le=1)
-    sources_count: int = Field(default=0, description="数据源数量")
-    keywords: List[str] = Field(default_factory=list, description="关键词")
-    reasoning: str = Field(default="", description="分析理由")
+    sources_count: int = Field(default=0, description="Number of data sources")
+    keywords: List[str] = Field(default_factory=list, description="Keywords")
+    reasoning: str = Field(default="", description="Analysis reasoning")
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class SentimentAnalyzer:
-    """情绪分析器"""
+    """Sentiment analyzer"""
     
     def __init__(
         self,
@@ -44,7 +44,7 @@ class SentimentAnalyzer:
         if use_llm:
             self.client = OpenAI()
         
-        # 模拟的情绪关键词（用于关键词匹配模式）
+        # Mock sentiment keywords (for keyword matching mode)
         self._bullish_keywords = [
             "bullish", "moon", "pump", "buy", "long", "breakout",
             "ATH", "rally", "surge", "adoption", "institutional"
@@ -59,13 +59,13 @@ class SentimentAnalyzer:
         symbol: str,
         texts: Optional[List[str]] = None
     ) -> SentimentResult:
-        """分析情绪"""
+        """Analyze sentiment"""
         
         if not texts:
-            # 模拟情绪数据
+            # Mock sentiment data
             return self._generate_mock_sentiment(symbol)
         
-        # 根据配置选择分析方法
+        # Select analysis method based on configuration
         if self.use_llm:
             return await self._analyze_with_llm(symbol, texts)
         else:
@@ -76,23 +76,23 @@ class SentimentAnalyzer:
         symbol: str,
         texts: List[str]
     ) -> SentimentResult:
-        """使用LLM分析情绪"""
+        """Analyze sentiment using LLM"""
         
-        # 限制文本数量和长度
-        sample_texts = texts[:20]  # 最多分析20条
-        truncated_texts = [t[:200] for t in sample_texts]  # 每条最多200字符
+        # Limit text count and length
+        sample_texts = texts[:20]  # Analyze up to 20 items
+        truncated_texts = [t[:200] for t in sample_texts]  # Max 200 characters each
         
-        # 构建提示词
+        # Build prompt
         prompt = self._build_llm_prompt(symbol, truncated_texts)
         
         try:
-            # 调用LLM
+            # Call LLM
             response = await asyncio.to_thread(
                 self._call_llm,
                 prompt
             )
             
-            # 解析响应
+            # Parse response
             result = self._parse_llm_response(symbol, response, len(texts))
             
             logger.info(
@@ -103,7 +103,7 @@ class SentimentAnalyzer:
             
         except Exception as e:
             logger.error(f"LLM sentiment analysis error: {e}")
-            # 降级到关键词匹配
+            # Fall back to keyword matching
             return self._analyze_with_keywords(symbol, texts)
     
     def _analyze_with_keywords(
@@ -111,7 +111,7 @@ class SentimentAnalyzer:
         symbol: str,
         texts: List[str]
     ) -> SentimentResult:
-        """使用关键词匹配分析情绪"""
+        """Analyze sentiment using keyword matching"""
         
         bullish_count = 0
         bearish_count = 0
@@ -148,49 +148,49 @@ class SentimentAnalyzer:
             symbol=symbol,
             sentiment=sentiment,
             score=score,
-            confidence=min(0.9, total / 20),  # 数据越多置信度越高
+            confidence=min(0.9, total / 20),  # Higher data volume = higher confidence
             sources_count=len(texts),
             keywords=found_keywords[:10],
-            reasoning=f"基于关键词匹配: {bullish_count} 个看涨关键词, {bearish_count} 个看跌关键词"
+            reasoning=f"Based on keyword matching: {bullish_count} bullish keywords, {bearish_count} bearish keywords"
         )
     
     def _build_llm_prompt(self, symbol: str, texts: List[str]) -> str:
-        """构建LLM提示词"""
+        """Build LLM prompt"""
         
-        system_prompt = """你是一个专业的加密货币市场情绪分析师。你的任务是分析社交媒体上的讨论，评估市场对特定加密货币的整体情绪。
+        system_prompt = """You are a professional cryptocurrency market sentiment analyst. Your task is to analyze social media discussions and assess the overall market sentiment towards a specific cryptocurrency.
 
-你必须以JSON格式输出，包含以下字段：
-- sentiment: "bullish"(看涨), "bearish"(看跌), 或 "neutral"(中性)
-- score: -1到1之间的数值，负数表示看跌，正数表示看涨
-- confidence: 0-1之间的数值，表示你对这个判断的置信度
-- keywords: 3-5个关键词的列表，代表主要讨论话题
-- reasoning: 简短解释你的判断理由（50字以内）
+You must output in JSON format with the following fields:
+- sentiment: "bullish", "bearish", or "neutral"
+- score: a value between -1 and 1, negative means bearish, positive means bullish
+- confidence: a value between 0-1 indicating your confidence in the judgment
+- keywords: a list of 3-5 keywords representing the main discussion topics
+- reasoning: a brief explanation of your reasoning (under 50 words)
 
-评估标准：
-1. 看涨情绪: 积极讨论、价格预期上涨、技术突破、采用增加
-2. 看跌情绪: 消极讨论、价格预期下跌、技术问题、监管担忧
-3. 中性情绪: 讨论平衡、观望态度、技术性讨论
+Evaluation criteria:
+1. Bullish sentiment: positive discussions, price expected to rise, technical breakthroughs, increased adoption
+2. Bearish sentiment: negative discussions, price expected to fall, technical issues, regulatory concerns
+3. Neutral sentiment: balanced discussions, wait-and-see attitude, technical discussions
 
-注意事项：
-1. 区分噪音和有价值的信号
-2. 考虑讨论的质量而非仅仅数量
-3. 识别潜在的操纵或FUD
-4. 如果讨论内容模糊或矛盾，降低置信度"""
+Guidelines:
+1. Distinguish noise from valuable signals
+2. Consider the quality of discussions, not just quantity
+3. Identify potential manipulation or FUD
+4. If discussions are vague or contradictory, lower confidence"""
 
         texts_formatted = "\n".join([f"{i+1}. {t}" for i, t in enumerate(texts)])
         
         user_prompt = f"""
-请分析以下关于 {symbol} 的社交媒体讨论：
+Please analyze the following social media discussions about {symbol}:
 
 {texts_formatted}
 
-请给出你的情绪评估（JSON格式）：
+Please provide your sentiment assessment (JSON format):
 """
         
         return f"{system_prompt}\n\n{user_prompt}"
     
     def _call_llm(self, prompt: str) -> str:
-        """调用LLM"""
+        """Call LLM"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -207,9 +207,9 @@ class SentimentAnalyzer:
         response: str,
         total_texts: int
     ) -> SentimentResult:
-        """解析LLM响应"""
+        """Parse LLM response"""
         try:
-            # 提取JSON部分
+            # Extract JSON part
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
             if json_start >= 0 and json_end > json_start:
@@ -218,7 +218,7 @@ class SentimentAnalyzer:
             else:
                 raise ValueError("No JSON found in response")
             
-            # 创建情绪结果
+            # Create sentiment result
             result = SentimentResult(
                 symbol=symbol,
                 sentiment=data.get("sentiment", "neutral"),
@@ -243,8 +243,8 @@ class SentimentAnalyzer:
             )
     
     def _generate_mock_sentiment(self, symbol: str) -> SentimentResult:
-        """生成模拟情绪数据"""
-        # 随机生成情绪
+        """Generate mock sentiment data"""
+        # Randomly generate sentiment
         score = random.gauss(0, 0.3)
         score = max(-1, min(1, score))
         
@@ -265,11 +265,11 @@ class SentimentAnalyzer:
             confidence=random.uniform(0.4, 0.8),
             sources_count=random.randint(10, 100),
             keywords=keywords,
-            reasoning="模拟数据"
+            reasoning="Mock data"
         )
     
     async def get_market_fear_greed(self) -> Dict:
-        """获取市场恐惧贪婪指数（模拟）"""
+        """Get market Fear & Greed index (mock)"""
         index = random.randint(20, 80)
         
         if index < 25:
@@ -294,7 +294,7 @@ class SentimentAnalyzer:
         symbol: str,
         historical_texts: List[List[str]]
     ) -> Dict:
-        """分析情绪趋势（需要历史数据）"""
+        """Analyze sentiment trend (requires historical data)"""
         if not historical_texts or len(historical_texts) < 2:
             return {
                 "trend": "unknown",
@@ -302,13 +302,13 @@ class SentimentAnalyzer:
                 "confidence": 0
             }
         
-        # 分析每个时间点的情绪
+        # Analyze sentiment at each time point
         sentiments = []
         for texts in historical_texts:
             result = await self.analyze(symbol, texts)
             sentiments.append(result.score)
         
-        # 计算趋势
+        # Calculate trend
         if len(sentiments) >= 2:
             recent_avg = sum(sentiments[-3:]) / min(3, len(sentiments))
             earlier_avg = sum(sentiments[:3]) / min(3, len(sentiments))

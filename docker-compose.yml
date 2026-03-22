@@ -1,11 +1,11 @@
 # Auto Trading Agent - Docker Compose
-# 支持开发、测试、生产多环境部署
+# Supports development, testing, and production multi-environment deployment
 
 version: '3.8'
 
 services:
   # ============================================
-  # 后端 API 服务
+  # Backend API Service
   # ============================================
   backend:
     build:
@@ -37,7 +37,7 @@ services:
       - trading-network
 
   # ============================================
-  # 前端服务（生产环境使用 Nginx）
+  # Frontend Service (Nginx for production)
   # ============================================
   frontend:
     image: nginx:alpine
@@ -54,7 +54,7 @@ services:
       - trading-network
 
   # ============================================
-  # Redis 缓存（可选）
+  # Redis Cache (optional)
   # ============================================
   redis:
     image: redis:7-alpine
@@ -71,7 +71,7 @@ services:
       - full
 
   # ============================================
-  # 监控服务 - Prometheus（可选）
+  # Monitoring Service - Prometheus (optional)
   # ============================================
   prometheus:
     image: prom/prometheus:latest
@@ -91,7 +91,7 @@ services:
       - monitoring
 
   # ============================================
-  # 监控服务 - Grafana（可选）
+  # Monitoring Service - Grafana (optional)
   # ============================================
   grafana:
     image: grafana/grafana:latest
@@ -111,14 +111,14 @@ services:
       - monitoring
 
 # ============================================
-# 网络配置
+# Network Configuration
 # ============================================
 networks:
   trading-network:
     driver: bridge
 
 # ============================================
-# 数据卷
+# Data Volumes
 # ============================================
 volumes:
   redis-data:

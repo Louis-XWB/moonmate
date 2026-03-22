@@ -1,12 +1,12 @@
-# Auto Trading Agent - 开发环境配置
+# Auto Trading Agent - Development Environment Configuration
 
 env: dev
 debug: true
 
-# 交易模式
-# - paper: 模拟盘（默认）
-# - live_cex: 实盘CEX（币安永续）
-# - live_dex: 实盘DEX（Hyperliquid链上）
+# Trading mode
+# - paper: Paper trading (default)
+# - live_cex: Live CEX (Binance perpetuals)
+# - live_dex: Live DEX (Hyperliquid on-chain)
 trading:
   mode: paper
   symbols:
@@ -21,25 +21,25 @@ trading:
     - market
   min_order_interval: 60
 
-# 币安永续合约配置
+# Binance perpetual futures configuration
 binance_futures:
   enabled: false
   api_key: ""
   api_secret: ""
   testnet: true
   leverage: 2
-  margin_type: isolated  # isolated 或 crossed
+  margin_type: isolated  # isolated or crossed
   rate_limit: 10
 
-# Hyperliquid链上永续配置
+# Hyperliquid on-chain perpetual configuration
 hyperliquid:
   enabled: false
-  private_key: ""  # 0x开头的私钥
+  private_key: ""  # Private key starting with 0x
   testnet: true
   leverage: 2
-  vault_address: ""  # 可选：通过Vault交易
+  vault_address: ""  # Optional: trade via Vault
 
-# 风控配置
+# Risk control configuration
 risk:
   max_daily_loss: 100
   max_daily_loss_pct: 5.0
@@ -51,7 +51,7 @@ risk:
   cooldown_period: 3600
   position_limit: 3
 
-# AI配置
+# AI configuration
 ai:
   enabled: true
   model: gpt-4.1-mini
@@ -60,7 +60,7 @@ ai:
   confidence_threshold: 0.6
   signal_ttl: 300
 
-# 策略配置
+# Strategy configuration
 strategies:
   - name: momentum
     enabled: true
@@ -72,7 +72,7 @@ strategies:
       sma_slow: 20
     weight: 1.0
 
-# Apify数据抓取配置
+# Apify data scraping configuration
 apify:
   api_token: ""
   reddit:
@@ -90,12 +90,12 @@ apify:
       - btc
     max_items: 10
 
-# API服务配置
+# API service configuration
 api_host: "0.0.0.0"
 api_port: 8000
 ws_enabled: true
 
-# 日志配置
+# Logging configuration
 logging:
   level: INFO
   file_enabled: true

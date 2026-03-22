@@ -1,6 +1,6 @@
 """
-Web3 模块
-提供钱包管理、签名、链上交互等功能
+Web3 module
+Provides wallet management, signing, and on-chain interaction
 """
 
 from .wallet import Wallet, WalletManager

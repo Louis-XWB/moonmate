@@ -1,5 +1,5 @@
 # Auto Trading Agent - Strategy Layer
-# 策略层：动量策略、反转策略、多信号融合
+# Strategy layer: momentum strategy, reversal strategy, multi-signal fusion
 
 from .base import BaseStrategy
 from .momentum import MomentumStrategy

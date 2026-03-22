@@ -10,7 +10,7 @@ export default function ScraperPanel() {
   const [apiToken, setApiToken] = useState('');
   const [showConfig, setShowConfig] = useState(false);
 
-  // 获取抓取器状态
+  // Get scraper status
   const fetchStatus = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/scraper/status`);
@@ -24,14 +24,14 @@ export default function ScraperPanel() {
     }
   }, []);
 
-  // 定期刷新状态
+  // Periodically refresh status
   useEffect(() => {
     fetchStatus();
     const interval = setInterval(fetchStatus, 10000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
 
-  // 手动触发抓取
+  // Manually trigger scrape
   const handleScrape = async (source = null) => {
     setIsLoading(true);
     setError(null);
@@ -60,7 +60,7 @@ export default function ScraperPanel() {
     }
   };
 
-  // 切换模式
+  // Toggle mode
   const handleModeChange = async (newMode) => {
     try {
       await fetch(`${API_BASE}/api/scraper/mode`, {
@@ -74,7 +74,7 @@ export default function ScraperPanel() {
     }
   };
 
-  // 切换数据源
+  // Switch data source
   const handleDataSourceChange = async (newSource) => {
     try {
       await fetch(`${API_BASE}/api/scraper/config`, {
@@ -88,7 +88,7 @@ export default function ScraperPanel() {
     }
   };
 
-  // 更新配置
+  // Update configuration
   const handleUpdateConfig = async () => {
     if (!apiToken) return;
     try {
@@ -109,10 +109,10 @@ export default function ScraperPanel() {
 
   return (
     <div className="space-y-6">
-      {/* 控制面板 */}
+      {/* Control Panel */}
       <div className="bg-gray-800 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">社交媒体数据抓取</h3>
+          <h3 className="text-lg font-semibold text-white">Social Media Data Scraping</h3>
           <button
             onClick={() => setShowConfig(!showConfig)}
             className="text-gray-400 hover:text-white"
@@ -124,7 +124,7 @@ export default function ScraperPanel() {
           </button>
         </div>
 
-        {/* 配置面板 */}
+        {/* Configuration Panel */}
         {showConfig && (
           <div className="mb-4 p-4 bg-gray-700 rounded-lg">
             <label className="block text-sm text-gray-300 mb-2">Apify API Token</label>
@@ -140,15 +140,15 @@ export default function ScraperPanel() {
                 onClick={handleUpdateConfig}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
               >
-                保存
+                Save
               </button>
             </div>
           </div>
         )}
 
-        {/* 数据源选择 */}
+        {/* Data Source Selection */}
         <div className="flex items-center gap-4 mb-4">
-          <span className="text-gray-400 text-sm">数据源:</span>
+          <span className="text-gray-400 text-sm">Data source:</span>
           <div className="flex bg-gray-700 rounded-lg p-1">
             <button
               onClick={() => handleDataSourceChange('reddit')}
@@ -179,9 +179,9 @@ export default function ScraperPanel() {
           </div>
         </div>
 
-        {/* 模式切换 */}
+        {/* Mode Switch */}
         <div className="flex items-center gap-4 mb-4">
-          <span className="text-gray-400 text-sm">抓取模式:</span>
+          <span className="text-gray-400 text-sm">Scraper mode:</span>
           <div className="flex bg-gray-700 rounded-lg p-1">
             <button
               onClick={() => handleModeChange('manual')}
@@ -191,7 +191,7 @@ export default function ScraperPanel() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              手动
+              Manual
             </button>
             <button
               onClick={() => handleModeChange('auto')}
@@ -201,12 +201,12 @@ export default function ScraperPanel() {
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              自动 (20分钟)
+              Auto (20 min)
             </button>
           </div>
         </div>
 
-        {/* 抓取按钮 */}
+        {/* Scrape Button */}
         <button
           onClick={() => handleScrape()}
           disabled={isLoading}
@@ -224,68 +224,68 @@ export default function ScraperPanel() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              抓取中...
+              Scraping...
             </span>
           ) : (
-            `立即抓取 ${isReddit ? 'Reddit' : 'X (Twitter)'}`
+            `Scrape ${isReddit ? 'Reddit' : 'X (Twitter)'} Now`
           )}
         </button>
 
-        {/* 错误提示 */}
+        {/* Error Message */}
         {error && (
           <div className="mt-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
             {error}
           </div>
         )}
 
-        {/* 状态信息 */}
+        {/* StatusInfo */}
         {status && (
           <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-400">上次抓取:</span>
+              <span className="text-gray-400">Last Scrape:</span>
               <span className="text-white ml-2">
                 {status.last_scrape_time
-                  ? new Date(status.last_scrape_time).toLocaleString('zh-CN')
-                  : '从未'}
+                  ? new Date(status.last_scrape_time).toLocaleString('en-US')
+                  : 'Never'}
               </span>
             </div>
             {isAutoMode && status.next_scrape_time && (
               <div>
-                <span className="text-gray-400">下次抓取:</span>
+                <span className="text-gray-400">Next Scrape:</span>
                 <span className="text-green-400 ml-2">
-                  {new Date(status.next_scrape_time).toLocaleString('zh-CN')}
+                  {new Date(status.next_scrape_time).toLocaleString('en-US')}
                 </span>
               </div>
             )}
             <div>
-              <span className="text-gray-400">搜索词:</span>
+              <span className="text-gray-400">Search Terms:</span>
               <span className="text-white ml-2">
                 {status.search_terms?.join(', ') || 'N/A'}
               </span>
             </div>
             {isReddit && (
               <div>
-                <span className="text-gray-400">子版块:</span>
+                <span className="text-gray-400">Subreddits:</span>
                 <span className="text-orange-400 ml-2">
                   {status.subreddits?.map(s => `r/${s}`).join(', ') || 'N/A'}
                 </span>
               </div>
             )}
             <div>
-              <span className="text-gray-400">最大数量:</span>
+              <span className="text-gray-400">MaximumQuantity:</span>
               <span className="text-white ml-2">{status.max_items || 'N/A'}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* 抓取结果 */}
+      {/* Scrape result */}
       {lastResult && (
         <div className="bg-gray-800 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4">
-            抓取结果
+            Scrape result
             <span className={`ml-2 text-sm ${lastResult.success ? 'text-green-400' : 'text-red-400'}`}>
-              {lastResult.success ? '成功' : '失败'}
+              {lastResult.success ? 'Success' : 'Failed'}
             </span>
             {lastResult.source && (
               <span className={`ml-2 text-sm px-2 py-1 rounded ${
@@ -299,19 +299,19 @@ export default function ScraperPanel() {
           {lastResult.success && lastResult.posts?.length > 0 ? (
             <div className="space-y-4">
               <div className="text-sm text-gray-400">
-                共抓取 {lastResult.total_count} 条帖子 | 
-                时间: {new Date(lastResult.scraped_at).toLocaleString('zh-CN')}
+                Scraped {lastResult.total_count} posts | 
+                Time: {new Date(lastResult.scraped_at).toLocaleString('en-US')}
               </div>
               
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {lastResult.posts.map((post, index) => (
                   <div key={post.id || index} className="p-4 bg-gray-700 rounded-lg">
-                    {/* 帖子标题（Reddit）*/}
+                    {/* Post Title (Reddit)*/}
                     {post.title && (
                       <h4 className="font-medium text-white mb-2">{post.title}</h4>
                     )}
                     
-                    {/* 作者信息 */}
+                    {/* Author Info */}
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-medium text-white">{post.author_name}</span>
                       <span className="text-gray-400 text-sm">
@@ -322,13 +322,13 @@ export default function ScraperPanel() {
                       )}
                     </div>
                     
-                    {/* 帖子内容 */}
+                    {/* Post Content */}
                     <p className="text-gray-300 text-sm mb-2">
                       {post.text?.substring(0, 300)}
                       {post.text?.length > 300 && '...'}
                     </p>
                     
-                    {/* 统计数据 */}
+                    {/* Statistics */}
                     <div className="flex gap-4 text-xs text-gray-500">
                       <span>{post.source === 'reddit' ? '⬆️' : '❤️'} {post.score || 0}</span>
                       <span>💬 {post.comments || 0}</span>
@@ -339,7 +339,7 @@ export default function ScraperPanel() {
                           rel="noopener noreferrer"
                           className="text-blue-400 hover:underline"
                         >
-                          查看原文
+                          View Original
                         </a>
                       )}
                     </div>
@@ -349,27 +349,27 @@ export default function ScraperPanel() {
             </div>
           ) : lastResult.success ? (
             <div className="text-gray-400 text-center py-8">
-              未抓取到帖子数据
+              No posts scraped
             </div>
           ) : (
             <div className="text-red-400 text-center py-8">
-              {lastResult.error || '抓取失败'}
+              {lastResult.error || 'ScrapeFailed'}
             </div>
           )}
         </div>
       )}
 
-      {/* 使用说明 */}
+      {/* Usage Instructions */}
       <div className="bg-gray-800 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">使用说明</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">Usage Instructions</h3>
         <div className="text-sm text-gray-400 space-y-2">
-          <p>• <strong className="text-white">数据源选择</strong>: 支持 Reddit 和 X (Twitter) 两个平台</p>
-          <p>• <strong className="text-orange-400">Reddit</strong>: 抓取 r/Bitcoin、r/CryptoCurrency 等加密货币子版块</p>
-          <p>• <strong className="text-blue-400">X (Twitter)</strong>: 搜索 Bitcoin、Ethereum 等关键词的推文</p>
-          <p>• <strong className="text-white">手动模式</strong>: 点击"立即抓取"按钮手动触发一次数据抓取</p>
-          <p>• <strong className="text-white">自动模式</strong>: 系统每 20 分钟自动抓取一次</p>
-          <p>• 抓取的数据将用于情绪分析，辅助交易决策</p>
-          <p className="text-yellow-400">⚠️ 注意: 每次抓取会消耗 Apify 额度，请合理使用</p>
+          <p>• <strong className="text-white">Data Source Selection</strong>: Supports Reddit and X (Twitter) platforms</p>
+          <p>• <strong className="text-orange-400">Reddit</strong>: Scrapes crypto subreddits like r/Bitcoin, r/CryptoCurrency</p>
+          <p>• <strong className="text-blue-400">X (Twitter)</strong>: Searches tweets for keywords like Bitcoin, Ethereum</p>
+          <p>• <strong className="text-white">Manual mode</strong>: Click the "Scrape Now" button to manually trigger a data scrape</p>
+          <p>• <strong className="text-white">Auto mode</strong>: System automatically scrapes every 20 minutes</p>
+          <p>• Scraped data is used for sentiment analysis to support trading decisions</p>
+          <p className="text-yellow-400">⚠️ Note: Each scrape consumes Apify credits, please use wisely</p>
         </div>
       </div>
     </div>

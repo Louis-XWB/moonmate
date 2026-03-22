@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { 
-  Activity, TrendingUp, TrendingDown, AlertTriangle, 
+import {
+  Activity, TrendingUp, TrendingDown, AlertTriangle,
   Play, Square, RefreshCw, Settings, BarChart3,
   Wallet, Shield, Zap, Clock, DollarSign, Download, Newspaper, Users, Waves
 } from 'lucide-react'
@@ -31,7 +31,7 @@ function App() {
   const [ticker, setTicker] = useState(null)
   const [signal, setSignal] = useState(null)
 
-  // 获取系统状态
+  // Fetch system status
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/status`)
@@ -47,17 +47,17 @@ function App() {
     }
   }, [])
 
-  // WebSocket连接
+  // WebSocket connection
   useEffect(() => {
     const connectWs = () => {
       const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
       const websocket = new WebSocket(wsUrl)
-      
+
       websocket.onopen = () => {
         console.log('WebSocket connected')
         setWs(websocket)
       }
-      
+
       websocket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data)
@@ -70,34 +70,34 @@ function App() {
           console.error('WebSocket message error:', err)
         }
       }
-      
+
       websocket.onclose = () => {
         console.log('WebSocket disconnected')
         setWs(null)
-        // 重连
+        // Reconnect
         setTimeout(connectWs, 3000)
       }
-      
+
       websocket.onerror = (err) => {
         console.error('WebSocket error:', err)
       }
     }
-    
+
     connectWs()
-    
+
     return () => {
       if (ws) ws.close()
     }
   }, [])
 
-  // 定时刷新状态
+  // Periodically refresh status
   useEffect(() => {
     fetchStatus()
     const interval = setInterval(fetchStatus, 5000)
     return () => clearInterval(interval)
   }, [fetchStatus])
 
-  // 定时获取行情数据
+  // Periodically fetch market data
   useEffect(() => {
     const fetchTicker = async () => {
       try {
@@ -110,13 +110,13 @@ function App() {
         console.error('Failed to fetch ticker:', err)
       }
     }
-    
+
     fetchTicker()
     const interval = setInterval(fetchTicker, 3000)
     return () => clearInterval(interval)
   }, [])
 
-  // 启动Agent
+  // Start Agent
   const handleStart = async () => {
     setLoading(true)
     setError(null)
@@ -139,7 +139,7 @@ function App() {
     }
   }
 
-  // 停止Agent
+  // Stop Agent
   const handleStop = async () => {
     setLoading(true)
     setError(null)
@@ -159,24 +159,24 @@ function App() {
   }
 
   const tabs = [
-    { id: 'dashboard', label: '监控面板', icon: Activity },
+    { id: 'dashboard', label: 'Dashboard', icon: Activity },
     { id: 'decision-flow', label: 'Decision Flow', icon: Activity },
-    { id: 'multi-agent', label: 'AI委员会', icon: Users },
-    { id: 'vibe-strategy', label: 'Vibe策略', icon: Zap },
-    { id: 'whale-tracker', label: '鲸鱼追踪', icon: Waves },
-    { id: 'news', label: '财经新闻', icon: Newspaper },
-    { id: 'positions', label: '持仓管理', icon: Wallet },
-    { id: 'orders', label: '订单记录', icon: Clock },
-    { id: 'signals', label: '信号分析', icon: Zap },
-    { id: 'risk', label: '风控状态', icon: Shield },
-    { id: 'backtest', label: '策略回测', icon: BarChart3 },
-    { id: 'scraper', label: '数据抓取', icon: Download },
-    { id: 'config', label: '系统配置', icon: Settings },
+    { id: 'multi-agent', label: 'AI Committee', icon: Users },
+    { id: 'vibe-strategy', label: 'Vibe Strategy', icon: Zap },
+    { id: 'whale-tracker', label: 'Whale Tracker', icon: Waves },
+    { id: 'news', label: 'Financial News', icon: Newspaper },
+    { id: 'positions', label: 'Positions', icon: Wallet },
+    { id: 'orders', label: 'Orders', icon: Clock },
+    { id: 'signals', label: 'Signal Analysis', icon: Zap },
+    { id: 'risk', label: 'Risk Control', icon: Shield },
+    { id: 'backtest', label: 'Backtest', icon: BarChart3 },
+    { id: 'scraper', label: 'Data Scraper', icon: Download },
+    { id: 'config', label: 'Settings', icon: Settings },
   ]
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* 顶部导航 */}
+      {/* Top navigation */}
       <header className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -189,38 +189,38 @@ function App() {
               </div>
               <span className="text-sm text-slate-400">AI Trading Assistant with Gamification</span>
             </div>
-            
+
             <div className="flex items-center space-x-4">
-              {/* 状态指示 */}
+              {/* Status indicator */}
               <div className="flex items-center space-x-2">
                 <div className={`status-dot ${isRunning ? 'online' : 'offline'}`}></div>
                 <span className="text-sm text-slate-300">
-                  {isRunning ? '运行中' : '已停止'}
+                  {isRunning ? 'Running' : 'Stopped'}
                 </span>
               </div>
-              
-              {/* 控制按钮 */}
+
+              {/* Control buttons */}
               {isRunning ? (
-                <button 
+                <button
                   onClick={handleStop}
                   disabled={loading}
                   className="btn btn-danger flex items-center space-x-2"
                 >
                   <Square className="w-4 h-4" />
-                  <span>停止</span>
+                  <span>Stop</span>
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleStart}
                   disabled={loading}
                   className="btn btn-success flex items-center space-x-2"
                 >
                   <Play className="w-4 h-4" />
-                  <span>启动</span>
+                  <span>Start</span>
                 </button>
               )}
-              
-              <button 
+
+              <button
                 onClick={fetchStatus}
                 className="btn btn-secondary"
               >
@@ -231,7 +231,7 @@ function App() {
         </div>
       </header>
 
-      {/* 标签导航 */}
+      {/* Tab navigation */}
       <nav className="bg-slate-800/50 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-wrap gap-1">
@@ -240,8 +240,8 @@ function App() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-colors
-                  ${activeTab === tab.id 
-                    ? 'text-primary-400 border-b-2 border-primary-400' 
+                  ${activeTab === tab.id
+                    ? 'text-primary-400 border-b-2 border-primary-400'
                     : 'text-slate-400 hover:text-slate-200'
                   }`}
               >
@@ -253,7 +253,7 @@ function App() {
         </div>
       </nav>
 
-      {/* 错误提示 */}
+      {/* Error alert */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 flex items-center space-x-2">
@@ -263,12 +263,12 @@ function App() {
         </div>
       )}
 
-      {/* 主内容区 */}
+      {/* Main content area */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'dashboard' && (
-          <Dashboard 
-            status={status} 
-            ticker={ticker} 
+          <Dashboard
+            status={status}
+            ticker={ticker}
             signal={signal}
             isRunning={isRunning}
           />
@@ -287,24 +287,24 @@ function App() {
         {activeTab === 'config' && <ConfigPanel />}
       </main>
 
-      {/* AI交易助手宠物 */}
-      <TradingPet 
-        stats={status || {}} 
+      {/* AI Trading Assistant Pet */}
+      <TradingPet
+        stats={status || {}}
         isRunning={isRunning}
         ticker={ticker}
         onStart={handleStart}
         onStop={handleStop}
       />
 
-      {/* 底部状态栏 */}
+      {/* Bottom status bar */}
       <footer className="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 py-2">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between text-sm text-slate-400">
             <div className="flex items-center space-x-4">
-              <span>WebSocket: {ws ? '已连接' : '未连接'}</span>
+              <span>WebSocket: {ws ? 'Connected' : 'Disconnected'}</span>
               {ticker && (
                 <span>
-                  BTC/USDT: 
+                  BTC/USDT:
                   <span className={ticker.change_24h >= 0 ? 'price-up' : 'price-down'}>
                     {' '}${ticker.last_price?.toLocaleString(undefined, {minimumFractionDigits: 2})}
                   </span>

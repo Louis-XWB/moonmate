@@ -1,6 +1,6 @@
 """
-风控引擎
-管理和执行所有风控规则
+Risk Engine
+Manages and executes all risk control rules
 """
 
 from datetime import datetime
@@ -20,7 +20,7 @@ logger = get_logger("risk_engine")
 
 
 class RiskState(BaseModel):
-    """风控状态"""
+    """Risk control state"""
     is_trading_allowed: bool = True
     circuit_breaker_active: bool = False
     cooldown_until: Optional[datetime] = None
@@ -33,17 +33,17 @@ class RiskState(BaseModel):
 
 
 class RiskCheckResult(BaseModel):
-    """风控检查结果"""
+    """Risk check result"""
     passed: bool = True
     rule_name: str = ""
     reason: str = ""
     severity: str = Field(default="info", description="info/warning/critical")
-    suggested_action: str = Field(default="", description="建议操作")
+    suggested_action: str = Field(default="", description="Suggested action")
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RiskEngine:
-    """风控引擎"""
+    """Risk Engine"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
@@ -51,11 +51,11 @@ class RiskEngine:
         self.state = RiskState()
         self.event_bus = get_event_bus()
         
-        # 初始化默认规则
+        # Initialize default rules
         self._init_default_rules()
     
     def _init_default_rules(self):
-        """初始化默认风控规则"""
+        """Initialize default risk control rules"""
         self.rules = [
             PositionLimitRule(
                 max_positions=self.config.get("max_positions", 3),
@@ -79,16 +79,16 @@ class RiskEngine:
             )
         ]
         
-        # 按优先级排序
+        # Sort by priority
         self.rules.sort(key=lambda r: r.priority, reverse=True)
     
     def add_rule(self, rule: RiskRule):
-        """添加风控规则"""
+        """Add risk control rule"""
         self.rules.append(rule)
         self.rules.sort(key=lambda r: r.priority, reverse=True)
     
     def remove_rule(self, rule_name: str):
-        """移除风控规则"""
+        """Remove risk control rule"""
         self.rules = [r for r in self.rules if r.name != rule_name]
     
     def check(
@@ -99,48 +99,48 @@ class RiskEngine:
         context: Optional[Dict[str, Any]] = None
     ) -> RiskCheckResult:
         """
-        执行风控检查
+        Execute risk control check
         
         Args:
-            signal: 交易信号
-            positions: 当前持仓列表
-            orders: 当前订单列表
-            context: 额外上下文（包含账户信息、市场数据等）
+            signal: Trading signal
+            positions: Current positions list
+            orders: Current orders list
+            context: Additional context (account info, market data, etc.)
             
         Returns:
-            风控检查结果
+            Risk check result
         """
         context = context or {}
         
-        # 添加风控状态到上下文
+        # Add risk state to context
         context.update({
             "daily_pnl": self.state.daily_pnl,
             "current_drawdown": self.state.current_drawdown,
             "consecutive_losses": self.state.consecutive_losses
         })
         
-        # 检查熔断状态
+        # Check circuit breaker status
         if self.state.circuit_breaker_active:
             return RiskCheckResult(
                 passed=False,
                 rule_name="circuit_breaker",
-                reason="熔断器已激活，禁止交易",
+                reason="Circuit breaker is active, trading is prohibited",
                 severity="critical",
-                suggested_action="等待熔断解除"
+                suggested_action="Wait for circuit breaker to reset"
             )
         
-        # 检查冷却期
+        # Check cooldown period
         if self.state.cooldown_until and datetime.now() < self.state.cooldown_until:
             remaining = (self.state.cooldown_until - datetime.now()).seconds // 60
             return RiskCheckResult(
                 passed=False,
                 rule_name="cooldown",
-                reason=f"冷却期中，剩余{remaining}分钟",
+                reason=f"In cooldown period, {remaining} minutes remaining",
                 severity="warning",
-                suggested_action=f"等待{remaining}分钟"
+                suggested_action=f"Wait for {remaining} minutes"
             )
         
-        # 执行所有规则检查
+        # Execute all rule checks
         failed_results = []
         
         for rule in self.rules:
@@ -154,7 +154,7 @@ class RiskEngine:
                     failed_results.append(result)
                     logger.warning(f"Risk check failed: {rule.name} - {result.reason}")
                     
-                    # 如果是严重级别，立即返回
+                    # If critical severity, return immediately
                     if result.severity == "critical":
                         self._handle_critical_failure(result)
                         return result
@@ -162,27 +162,27 @@ class RiskEngine:
             except Exception as e:
                 logger.error(f"Risk rule {rule.name} error: {e}")
         
-        # 如果有失败的检查
+        # If there are failed checks
         if failed_results:
-            # 返回最高优先级的失败结果
+            # Return highest priority failure
             self.state.failed_checks = [r.rule_name for r in failed_results]
             return failed_results[0]
         
-        # 所有检查通过
+        # All checks passed
         self.state.last_check_time = datetime.now()
         self.state.failed_checks = []
         
         return RiskCheckResult(
             passed=True,
             rule_name="all",
-            reason="所有风控检查通过"
+            reason="All risk checks passed"
         )
     
     def _handle_critical_failure(self, result: RiskCheckResult):
-        """处理严重级别的风控失败"""
+        """Handle critical risk failure"""
         logger.critical(f"Critical risk failure: {result.reason}")
         
-        # 发送风控事件
+        # Send risk event
         self.event_bus.publish_sync(Event(
             type=EventType.RISK_CHECK_FAILED,
             source="risk_engine",
@@ -194,27 +194,27 @@ class RiskEngine:
         ))
     
     def update_pnl(self, pnl: float):
-        """更新盈亏"""
+        """Update profit/loss"""
         self.state.daily_pnl += pnl
         
-        # 更新连续亏损
+        # Update consecutive losses
         if pnl < 0:
             self.state.consecutive_losses += 1
         else:
             self.state.consecutive_losses = 0
     
     def update_balance(self, balance: float):
-        """更新账户余额"""
-        # 更新峰值
+        """Update account balance"""
+        # Update peak
         if balance > self.state.peak_balance:
             self.state.peak_balance = balance
         
-        # 计算回撤
+        # Calculate drawdown
         if self.state.peak_balance > 0:
             self.state.current_drawdown = (self.state.peak_balance - balance) / self.state.peak_balance * 100
     
     def trigger_circuit_breaker(self, reason: str):
-        """触发熔断"""
+        """Trigger circuit breaker"""
         self.state.circuit_breaker_active = True
         self.state.is_trading_allowed = False
         
@@ -227,31 +227,31 @@ class RiskEngine:
         ))
     
     def reset_circuit_breaker(self):
-        """重置熔断"""
+        """Reset circuit breaker"""
         self.state.circuit_breaker_active = False
         self.state.is_trading_allowed = True
         
         logger.info("Circuit breaker reset")
     
     def start_cooldown(self, minutes: int):
-        """开始冷却期"""
+        """Start cooldown period"""
         from datetime import timedelta
         self.state.cooldown_until = datetime.now() + timedelta(minutes=minutes)
         logger.warning(f"Cooldown started for {minutes} minutes")
     
     def reset_daily(self):
-        """重置每日统计"""
+        """Reset daily statistics"""
         self.state.daily_pnl = 0
         self.state.consecutive_losses = 0
         self.state.failed_checks = []
         logger.info("Daily risk stats reset")
     
     def get_state(self) -> RiskState:
-        """获取风控状态"""
+        """Get risk state"""
         return self.state
     
     def get_rules_status(self) -> List[Dict]:
-        """获取所有规则状态"""
+        """Get all rules status"""
         return [
             {
                 "name": rule.name,

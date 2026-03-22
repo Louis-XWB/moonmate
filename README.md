@@ -1,160 +1,152 @@
 # MoonMate - AI Trading Assistant with Gamification
 
-> **重要提示**：本项目持续开发中，部分已接入真实交易 API。在切换到实盘模式前，请务必充分了解相关风险，并从极小资金开始测试。开发者对任何实盘交易造成的损失不承担任何责任。
+> **Important**: This project is under active development, and some features are connected to real trading APIs. Before switching to live trading mode, make sure you fully understand the risks involved and start testing with minimal funds. The developers are not responsible for any losses from live trading.
 
-MoonMate 是一个创新的 Web3 AI 自动交易系统，它将复杂的量化交易策略与一个名为“MoonMate”的AI宠物助手相结合，通过游戏化的方式，为您带来直观、有趣且强大的交易体验。
-
----
-
-## 🚀 功能演示
-
-![功能演示](intro.gif)
-
-> 📺 [观看高清视频 (YouTube)](https://youtu.be/jBk7e667Vso)
+MoonMate is an innovative Web3 AI automated trading system that combines complex quantitative trading strategies with a gamified AI pet assistant called "MoonMate", delivering an intuitive, fun, and powerful trading experience.
 
 ---
 
-## ✨ 项目特性
+## Features
 
-### 核心交易引擎
+### Core Trading Engine
 
-- **多执行器引擎**: 支持模拟盘、**永续合约 (CEX)** 和 **Hyperliquid 链上永续 (DEX)** 的无缝切换。
-- **实时行情数据**: 接入交易所 API 获取实时行情，并支持多数据源扩展。
-- **模块化架构**: 数据层、AI 层、策略层、风控层、执行层清晰分离，易于扩展。
-- **完善的风控**: 日亏损限制、最大回撤、连续亏损熔断等多重风控规则。
-- **回测系统**: 支持历史数据回测，计算 Sharpe、最大回撤等关键指标。
+- **Multi-Executor Engine**: Seamlessly switch between paper trading, **perpetual futures (CEX)**, and **Hyperliquid on-chain perpetuals (DEX)**.
+- **Real-Time Market Data**: Connects to exchange APIs for real-time market data with multi-source support.
+- **Modular Architecture**: Clean separation between data layer, AI layer, strategy layer, risk control layer, and execution layer for easy extension.
+- **Comprehensive Risk Control**: Multiple risk rules including daily loss limits, maximum drawdown, and consecutive loss circuit breakers.
+- **Backtesting System**: Supports historical data backtesting with key metrics like Sharpe ratio and maximum drawdown.
 
-### AI 策略与分析
+### AI Strategy & Analysis
 
-- **AI 委员会**: 多个独立的AI Agent共同决策，提高信号准确性。
-- **Decision Flow**: 可视化的决策流矩阵，清晰展示AI的思考过程。
-- **Vibe 策略偏好**: 用户可自定义交易策略偏好，AI 会严格遵守这些规则进行决策。
-- **社交媒体抓取**: 通过 Apify 抓取 Reddit/Twitter 数据进行情绪分析。
-- **鲸鱼追踪**: 监控大额链上交易，发现市场动向。
-- **多策略支持**: 内置动量、反转、盘口失衡等多种策略，支持策略插件化扩展。
+- **AI Committee**: Multiple independent AI Agents collaborate on decisions to improve signal accuracy.
+- **Decision Flow**: Visual decision flow matrix that clearly shows the AI's reasoning process.
+- **Vibe Strategy Preferences**: Users can customize trading strategy preferences, and the AI will strictly follow these rules when making decisions.
+- **Social Media Scraping**: Scrapes Reddit/Twitter data via Apify for sentiment analysis.
+- **Whale Tracking**: Monitors large on-chain transactions to identify market trends.
+- **Multi-Strategy Support**: Built-in momentum, reversal, orderbook imbalance, and other strategies with plugin-based extensibility.
 
-### 创新的 MoonMate 宠物助手
+### Innovative MoonMate Pet Assistant
 
-- **游戏化交易体验**: 将交易过程与一个可爱的AI宠物养成相结合，告别枯燥的数字。
-- **智能状态指示**: 宠物拥有不同的表情状态，实时反映系统运行情况和交易盈亏。
-- **成长系统**: 宠物拥有7个等级（Lv.1 新手 → Lv.7 传奇），根据累计总盈利自动升级，见证您的成长之路。
-- **成就系统**: 内置8个精心设计的成就（如“首次盈利💰”、“连赢5单🔥”），激励您达成不同的交易里程碑。
-- **便捷交互**: 
-    - **悬停提示**: 鼠标悬停显示迷你仪表盘（总盈亏、胜率、成就等）。
-    - **右键菜单**: 快速启动/停止系统、查看成就。
-    - **自由拖拽**: 可将宠物拖拽到屏幕任意位置。
+- **Gamified Trading Experience**: Combines the trading process with a cute AI pet companion, making numbers come alive.
+- **Smart Status Indicator**: The pet has different emotional states that reflect the system's running status and trading P&L in real time.
+- **Growth System**: The pet has 7 levels (Lv.1 Rookie to Lv.7 Legend), automatically leveling up based on cumulative profit.
+- **Achievement System**: 8 carefully designed achievements (e.g., "First Profit", "5 Wins Streak") to motivate you to reach different trading milestones.
+- **Convenient Interaction**:
+    - **Hover Tooltip**: Hover to see a mini dashboard (Total P&L, win rate, achievements, etc.).
+    - **Right-Click Menu**: Quickly start/stop the system and view achievements.
+    - **Free Dragging**: Drag the pet to any position on the screen.
 
-### 可视化前端
+### Visual Frontend
 
-- **现代化仪表盘**: 使用 React + TailwindCSS 构建，实时展示账户余额、收益曲线、当前信号等核心信息。
-- **多功能面板**: 提供持仓管理、订单记录、信号分析、风控状态等多个独立面板，全面掌控交易细节。
+- **Modern Dashboard**: Built with React + TailwindCSS, displaying real-time account balance, profit curves, current signals, and other key information.
+- **Multi-Function Panels**: Position management, order history, signal analysis, risk control status, and more in separate panels for full trading control.
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```
-├── backend/                 # 后端代码
-│   ├── ai/                  # AI 层（多Agent、信号生成、情绪分析）
-│   ├── data/                # 数据层（行情、社交媒体、鲸鱼追踪）
-│   ├── strategy/            # 策略层（Vibe、Decision Flow、信号融合）
-│   ├── risk/                # 风控层
-│   ├── execution/           # 执行层（币安、Hyperliquid）
-│   └── api/                 # API 接口
-├── frontend/                # 前端代码
+├── backend/                 # Backend code
+│   ├── ai/                  # AI layer (multi-agent, signal generation, sentiment analysis)
+│   ├── data/                # Data layer (market data, social media, whale tracking)
+│   ├── strategy/            # Strategy layer (Vibe, Decision Flow, signal fusion)
+│   ├── risk/                # Risk control layer
+│   ├── execution/           # Execution layer (Binance, Hyperliquid)
+│   └── api/                 # API endpoints
+├── frontend/                # Frontend code
 │   └── src/
 │       ├── components/
-│       │   ├── TradingPet.jsx # ✅ MoonMate 宠物组件
-│       │   └── TradingPet.css # ✅ MoonMate 样式
+│       │   ├── TradingPet.jsx # MoonMate pet component
+│       │   └── TradingPet.css # MoonMate styles
 │       └── utils/
-│           └── petHelper.js   # ✅ MoonMate 工具函数
-├── config/                  # 配置文件
-├── tests/                   # 测试脚本
-├── requirements.txt         # Python 依赖
-├── start.sh                # 启动脚本
-└── README.md               # 本文档
+│           └── petHelper.js   # MoonMate utility functions
+├── config/                  # Configuration files
+├── tests/                   # Test scripts
+├── requirements.txt         # Python dependencies
+├── start.sh                # Startup script
+└── README.md               # This file
 ```
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 环境要求
+### Requirements
 
 - Python 3.10+
 - Node.js 18+
 - pnpm
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
-# 安装后端依赖
+# Install backend dependencies
 sudo pip3 install -r requirements.txt
 
-# 安装前端依赖
+# Install frontend dependencies
 cd frontend && pnpm install
 ```
 
-### 配置环境变量
+### Configure Environment Variables
 
-在项目根目录创建 `.env` 文件，并根据需要配置以下变量：
+Create a `.env` file in the project root and configure the following variables as needed:
 
 ```bash
-# Apify Token（社交媒体抓取需要）
-APIFY_API_TOKEN=\'your_apify_token\'
+# Apify Token (required for social media scraping)
+APIFY_API_TOKEN='your_apify_token'
 
-# --- 实盘交易配置 (CEX) ---
-# 币安测试网或主网的 API Key
-BINANCE_API_KEY=\'your_binance_api_key\'
-BINANCE_API_SECRET=\'your_binance_api_secret\'
+# --- Live Trading Configuration (CEX) ---
+# Binance testnet or mainnet API Key
+BINANCE_API_KEY='your_binance_api_key'
+BINANCE_API_SECRET='your_binance_api_secret'
 
-# --- 实盘交易配置 (DEX) ---
-# Hyperliquid 测试网或主网的钱包私钥 (0x开头)
-# 强烈建议使用仅用于交易的独立新钱包
-HYPERLIQUID_PRIVATE_KEY=\'your_wallet_private_key\'
+# --- Live Trading Configuration (DEX) ---
+# Hyperliquid testnet or mainnet wallet private key (starting with 0x)
+# Strongly recommended to use a separate wallet dedicated to trading only
+HYPERLIQUID_PRIVATE_KEY='your_wallet_private_key'
 ```
 
-### 配置文件 (`config/dev.yaml`)
+### Configuration File (`config/dev.yaml`)
 
-核心配置位于 `config/dev.yaml`，你可以在此切换交易模式和配置执行器。
+Core configuration is in `config/dev.yaml`, where you can switch trading modes and configure executors.
 
 ```yaml
-# 交易模式: paper (模拟盘) | live_cex (币安实盘) | live_dex (Hyperliquid实盘)
+# Trading mode: paper | live_cex (Binance) | live_dex (Hyperliquid)
 trading:
   mode: paper
 
-# 币安永续合约配置
+# Binance perpetual futures configuration
 binance_futures:
-  enabled: true # 设为 true 以启用
-  api_key: ${BINANCE_API_KEY} # 从环境变量读取
+  enabled: true # Set to true to enable
+  api_key: ${BINANCE_API_KEY} # Read from environment variable
   api_secret: ${BINANCE_API_SECRET}
-  testnet: true # true=测试网, false=主网
+  testnet: true # true=testnet, false=mainnet
 
-# Hyperliquid链上永续配置
+# Hyperliquid on-chain perpetual configuration
 hyperliquid:
-  enabled: true # 设为 true 以启用
-  private_key: ${HYPERLIQUID_PRIVATE_KEY} # 从环境变量读取
-  testnet: true # true=测试网, false=主网
+  enabled: true # Set to true to enable
+  private_key: ${HYPERLIQUID_PRIVATE_KEY} # Read from environment variable
+  testnet: true # true=testnet, false=mainnet
 ```
 
-### 运行项目
+### Run the Project
 
 ```bash
-# 一键启动 (后台运行后端，前台运行前端)
+# One-click start (backend runs in background, frontend in foreground)
 ./start.sh
 
-# 访问服务
-- 前端界面: http://localhost:3000
-- 后端 API: http://localhost:8000
-- API 文档: http://localhost:8000/docs
+# Access services
+- Frontend UI: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
 ```
 
 ---
 
-## 免责声明
+## Disclaimer
 
-本项目仅供学习和研究使用，不构成任何投资建议。加密货币交易具有极高风险，请谨慎决策。**使用本代码进行实盘交易所产生的任何损失，作者不承担任何责任。**
+This project is for educational and research purposes only and does not constitute investment advice. Cryptocurrency trading carries extremely high risk; please make decisions carefully. **The authors are not responsible for any losses resulting from live trading using this code.**
 
-## 许可证
+## License
 
 MIT License

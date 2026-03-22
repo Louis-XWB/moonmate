@@ -45,14 +45,14 @@ function RiskPanel({ status }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">风控状态</h2>
+        <h2 className="text-xl font-bold">Risk controlStatus</h2>
         <div className="flex items-center space-x-2">
           <button 
             onClick={handleResetRisk}
             className="btn btn-secondary flex items-center space-x-2"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>重置风控</span>
+            <span>Reset Risk Controls</span>
           </button>
           <button 
             onClick={fetchRiskStatus}
@@ -64,7 +64,7 @@ function RiskPanel({ status }) {
         </div>
       </div>
 
-      {/* 风控状态概览 */}
+      {/* Risk Control Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`card border-2 ${riskState.is_trading_allowed ? 'border-emerald-500' : 'border-red-500'}`}>
           <div className="flex items-center space-x-3">
@@ -74,9 +74,9 @@ function RiskPanel({ status }) {
               <XCircle className="w-8 h-8 text-red-500" />
             )}
             <div>
-              <p className="text-slate-400 text-sm">交易状态</p>
+              <p className="text-slate-400 text-sm">Trading Status</p>
               <p className={`text-lg font-bold ${riskState.is_trading_allowed ? 'text-emerald-400' : 'text-red-400'}`}>
-                {riskState.is_trading_allowed ? '允许交易' : '禁止交易'}
+                {riskState.is_trading_allowed ? 'Trading allowed' : 'Trading prohibited'}
               </p>
             </div>
           </div>
@@ -90,9 +90,9 @@ function RiskPanel({ status }) {
               <AlertTriangle className="w-8 h-8 text-red-500" />
             )}
             <div>
-              <p className="text-slate-400 text-sm">熔断状态</p>
+              <p className="text-slate-400 text-sm">Circuit breakerStatus</p>
               <p className={`text-lg font-bold ${!riskState.circuit_breaker_active ? 'text-emerald-400' : 'text-red-400'}`}>
-                {riskState.circuit_breaker_active ? '已触发' : '正常'}
+                {riskState.circuit_breaker_active ? 'Triggered' : 'Normal'}
               </p>
             </div>
           </div>
@@ -102,21 +102,21 @@ function RiskPanel({ status }) {
           <div className="flex items-center space-x-3">
             <Shield className="w-8 h-8 text-primary-500" />
             <div>
-              <p className="text-slate-400 text-sm">冷却期</p>
+              <p className="text-slate-400 text-sm">Cooldown Period</p>
               <p className="text-lg font-bold">
-                {riskState.cooldown_until ? '冷却中' : '无'}
+                {riskState.cooldown_until ? 'Cooling Down' : 'None'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 风控指标 */}
+      {/* Risk controlIndicator */}
       <div className="card">
-        <h3 className="font-medium mb-4">风控指标</h3>
+        <h3 className="font-medium mb-4">Risk controlIndicator</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
-            <p className="text-slate-400 text-sm">今日盈亏</p>
+            <p className="text-slate-400 text-sm">Today's P&L</p>
             <p className={`text-2xl font-bold ${riskState.daily_pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               ${riskState.daily_pnl?.toFixed(2) || '0.00'}
             </p>
@@ -127,12 +127,12 @@ function RiskPanel({ status }) {
                   style={{ width: `${Math.min(100, Math.abs(riskState.daily_pnl || 0))}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-400 mt-1">日亏损限额: $100</p>
+              <p className="text-xs text-slate-400 mt-1">Daily loss limit: $100</p>
             </div>
           </div>
 
           <div>
-            <p className="text-slate-400 text-sm">当前回撤</p>
+            <p className="text-slate-400 text-sm">Current drawdown </p>
             <p className={`text-2xl font-bold ${riskState.current_drawdown > 5 ? 'text-amber-400' : 'text-slate-300'}`}>
               {riskState.current_drawdown?.toFixed(2) || '0.00'}%
             </p>
@@ -143,14 +143,14 @@ function RiskPanel({ status }) {
                   style={{ width: `${Math.min(100, (riskState.current_drawdown || 0) * 10)}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-400 mt-1">最大回撤限额: 10%</p>
+              <p className="text-xs text-slate-400 mt-1">Maximum drawdown limit: 10%</p>
             </div>
           </div>
 
           <div>
-            <p className="text-slate-400 text-sm">连续亏损</p>
+            <p className="text-slate-400 text-sm">Consecutive losses </p>
             <p className={`text-2xl font-bold ${riskState.consecutive_losses > 3 ? 'text-amber-400' : 'text-slate-300'}`}>
-              {riskState.consecutive_losses || 0} 次
+              {riskState.consecutive_losses || 0} times
             </p>
             <div className="mt-2">
               <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -159,31 +159,31 @@ function RiskPanel({ status }) {
                   style={{ width: `${Math.min(100, (riskState.consecutive_losses || 0) * 20)}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-400 mt-1">最大连续亏损: 5次</p>
+              <p className="text-xs text-slate-400 mt-1">Maximum consecutive losses: 5</p>
             </div>
           </div>
 
           <div>
-            <p className="text-slate-400 text-sm">峰值余额</p>
+            <p className="text-slate-400 text-sm">Peak Balance</p>
             <p className="text-2xl font-bold text-slate-300">
               ${riskState.peak_balance?.toFixed(2) || '10000.00'}
             </p>
-            <p className="text-xs text-slate-400 mt-2">用于计算回撤</p>
+            <p className="text-xs text-slate-400 mt-2">Used for drawdown calculation</p>
           </div>
         </div>
       </div>
 
-      {/* 风控规则列表 */}
+      {/* Risk controlRuleList */}
       <div className="card">
-        <h3 className="font-medium mb-4">风控规则</h3>
+        <h3 className="font-medium mb-4">Risk controlRule</h3>
         <div className="table-container">
           <table className="data-table">
             <thead>
               <tr>
-                <th>规则名称</th>
-                <th>状态</th>
-                <th>优先级</th>
-                <th>描述</th>
+                <th>Rule Name</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Description</th>
               </tr>
             </thead>
             <tbody>
@@ -193,25 +193,25 @@ function RiskPanel({ status }) {
                   <td>
                     <span className={`flex items-center space-x-1 ${rule.enabled ? 'text-emerald-400' : 'text-slate-400'}`}>
                       {rule.enabled ? (
-                        <><CheckCircle className="w-4 h-4" /><span>启用</span></>
+                        <><CheckCircle className="w-4 h-4" /><span>Enabled</span></>
                       ) : (
-                        <><XCircle className="w-4 h-4" /><span>禁用</span></>
+                        <><XCircle className="w-4 h-4" /><span>Disabled</span></>
                       )}
                     </span>
                   </td>
                   <td>{rule.priority}</td>
                   <td className="text-slate-400">
-                    {rule.name === 'position_limit' && '持仓数量和金额限制'}
-                    {rule.name === 'daily_loss' && '日亏损限制'}
-                    {rule.name === 'drawdown' && '最大回撤限制'}
-                    {rule.name === 'consecutive_loss' && '连续亏损熔断'}
-                    {rule.name === 'price_protection' && '价格保护（滑点/价差）'}
+                    {rule.name === 'position_limit' && 'Position size and amount limits'}
+                    {rule.name === 'daily_loss' && 'Daily loss limit'}
+                    {rule.name === 'drawdown' && 'MaximumDrawdownLimit'}
+                    {rule.name === 'consecutive_loss' && 'Consecutive losses Circuit breaker'}
+                    {rule.name === 'price_protection' && 'Price protection (slippage/spread)'}
                   </td>
                 </tr>
               )) : (
                 <tr>
                   <td colSpan="4" className="text-center text-slate-400 py-4">
-                    加载风控规则中...
+                    Loading risk control rules...
                   </td>
                 </tr>
               )}
@@ -220,12 +220,12 @@ function RiskPanel({ status }) {
         </div>
       </div>
 
-      {/* 失败的检查 */}
+      {/* Failed checks */}
       {riskState.failed_checks && riskState.failed_checks.length > 0 && (
         <div className="card border-2 border-amber-500">
           <div className="flex items-center space-x-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h3 className="font-medium text-amber-400">风控警告</h3>
+            <h3 className="font-medium text-amber-400">Risk controlWarning</h3>
           </div>
           <ul className="space-y-2">
             {riskState.failed_checks.map((check, index) => (

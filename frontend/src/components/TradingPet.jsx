@@ -14,28 +14,28 @@ import {
 import './TradingPet.css'
 
 export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }) {
-  // 宠物状态
+  // Pet status
   const [petStatus, setPetStatus] = useState(PetStatus.IDLE)
   const [level, setLevel] = useState(null)
   const [levelProgress, setLevelProgress] = useState(0)
   const [unlockedAchievements, setUnlockedAchievements] = useState([])
   
-  // UI状态
+  // UIStatus
   const [showTooltip, setShowTooltip] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
   const [currentMessage, setCurrentMessage] = useState('')
   const [showMenu, setShowMenu] = useState(false)
   const [showAchievements, setShowAchievements] = useState(false)
   
-  // 动画状态
+  // Animation status
   const [isJumping, setIsJumping] = useState(false)
   const [isBouncing, setIsBouncing] = useState(false)
   
-  // 引用
+  // Refs
   const messageTimeoutRef = useRef(null)
   const lastPnlRef = useRef(0)
   
-  // 更新宠物状态
+  // UpdatePet status
   useEffect(() => {
     const newStatus = calculatePetStatus(stats, isRunning)
     setPetStatus(newStatus)
@@ -47,12 +47,12 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
     setLevel(newLevel)
     setLevelProgress(progress)
     
-    // 检查升级
+    // Check for level up
     if (level && newLevel.level > level.level) {
       showPetMessage(PetMessages.level_up(newLevel.level))
     }
     
-    // 检查成就
+    // Check achievements
     const market = ticker ? { change_24h: ticker.change_24h } : {}
     const newAchievements = checkAchievements(stats, market, unlockedAchievements)
     if (newAchievements.length > 0) {
@@ -62,19 +62,19 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
       })
     }
     
-    // 检测盈亏变化
+    // Detect P&L changes
     const currentPnl = stats.total_pnl || 0
     if (currentPnl > lastPnlRef.current) {
-      // 盈利，跳跃动画
+      // Profit, Jump animation
       triggerJump()
     } else if (currentPnl < lastPnlRef.current) {
-      // 亏损，弹跳动画
+      // Loss, Bounce animation
       triggerBounce()
     }
     lastPnlRef.current = currentPnl
   }, [stats, isRunning, ticker])
   
-  // 显示消息
+  // Show message
   const showPetMessage = (message) => {
     setCurrentMessage(message)
     setShowMessage(true)
@@ -88,39 +88,39 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
     }, 5000)
   }
   
-  // 触发跳跃动画
+  // TriggerJump animation
   const triggerJump = () => {
     setIsJumping(true)
     setTimeout(() => setIsJumping(false), 600)
   }
   
-  // 触发弹跳动画
+  // TriggerBounce animation
   const triggerBounce = () => {
     setIsBouncing(true)
     setTimeout(() => setIsBouncing(false), 600)
   }
   
-  // 点击宠物
+  // Click on pet
   const handlePetClick = () => {
-    // 根据状态显示不同消息
+    // Show different messages based on status
     if (!isRunning) {
-      showPetMessage('主人，快启动系统吧！我已经准备好了！💪')
+      showPetMessage('Hey! Start the system! I'm ready to go! 💪')
     } else if (petStatus === PetStatus.HAPPY || petStatus === PetStatus.EXCITED) {
       showPetMessage(getRandomMessage('profit'))
     } else if (petStatus === PetStatus.SAD || petStatus === PetStatus.WORRIED) {
       showPetMessage(getRandomMessage('loss'))
     } else {
-      showPetMessage('让我们一起分析市场，寻找机会！🔍')
+      showPetMessage('Let's analyze the market together and find opportunities! 🔍')
     }
   }
   
-  // 右键菜单
+  // Right-click menu
   const handleContextMenu = (e) => {
     e.preventDefault()
     setShowMenu(!showMenu)
   }
   
-  // 快捷操作
+  // Quick actions
   const handleQuickAction = (action) => {
     setShowMenu(false)
     
@@ -141,7 +141,7 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
     }
   }
   
-  // 获取宠物颜色
+  // Get pet color
   const petColor = PetStatusColors[petStatus]
   const petEmoji = PetStatusEmojis[petStatus]
   
@@ -152,7 +152,7 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
         bounds="body"
       >
         <div className="trading-pet-container">
-          {/* 宠物主体 */}
+          {/* Pet body */}
           <div
             className={`trading-pet ${isJumping ? 'jumping' : ''} ${isBouncing ? 'bouncing' : ''}`}
             style={{ borderColor: petColor, boxShadow: `0 0 20px ${petColor}40` }}
@@ -161,19 +161,19 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
           >
-            {/* 宠物表情 */}
+            {/* Pet expressions */}
             <div className="pet-emoji" style={{ fontSize: '48px' }}>
               {petEmoji}
             </div>
             
-            {/* 等级指示器 */}
+            {/* Level indicator */}
             {level && (
               <div className="pet-level" style={{ backgroundColor: level.color }}>
                 Lv.{level.level}
               </div>
             )}
             
-            {/* 经验条 */}
+            {/* Experience bar */}
             <div className="pet-exp-bar">
               <div
                 className="pet-exp-fill"
@@ -182,69 +182,69 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
             </div>
           </div>
           
-          {/* 悬停提示 */}
+          {/* Hover tooltip */}
           {showTooltip && level && (
             <div className="pet-tooltip">
               <div className="tooltip-title">{level.name}</div>
               <div className="tooltip-stats">
-                <div>💰 总盈亏: ${(stats.total_pnl || 0).toFixed(2)}</div>
-                <div>📊 胜率: {((stats.fill_rate || 0) * 100).toFixed(1)}%</div>
-                <div>🏆 成就: {unlockedAchievements.length}/8</div>
+                <div>💰 Total P&L: ${(stats.total_pnl || 0).toFixed(2)}</div>
+                <div>📊 Win rate: {((stats.fill_rate || 0) * 100).toFixed(1)}%</div>
+                <div>🏆 Achievements: {unlockedAchievements.length}/8</div>
               </div>
               <div className="tooltip-hint">
-                左键点击查看消息 • 右键打开菜单
+                Left-click for messages • Right-click for menu
               </div>
             </div>
           )}
           
-          {/* 消息气泡 */}
+          {/* Message bubble */}
           {showMessage && (
             <div className="pet-message-bubble">
               {currentMessage}
             </div>
           )}
           
-          {/* 右键菜单 */}
+          {/* Right-click menu */}
           {showMenu && (
             <div className="pet-context-menu">
               {!isRunning ? (
                 <div className="menu-item" onClick={() => handleQuickAction('start')}>
-                  ▶️ 启动系统
+                  ▶️ Start System
                 </div>
               ) : (
                 <div className="menu-item" onClick={() => handleQuickAction('stop')}>
-                  ⏸️ 停止系统
+                  ⏸️ Stop System
                 </div>
               )}
               <div className="menu-item" onClick={() => handleQuickAction('achievements')}>
-                🏆 查看成就
+                🏆 View Achievements
               </div>
               <div className="menu-item" onClick={() => setShowMenu(false)}>
-                ❌ 关闭菜单
+                ❌ Close Menu
               </div>
             </div>
           )}
         </div>
       </Draggable>
       
-      {/* 成就面板 */}
+      {/* Achievement panel */}
       {showAchievements && (
         <div className="pet-achievements-modal" onClick={() => setShowAchievements(false)}>
           <div className="achievements-panel" onClick={(e) => e.stopPropagation()}>
             <div className="achievements-header">
-              <h3>🏆 成就系统</h3>
+              <h3>🏆 Achievement System</h3>
               <button onClick={() => setShowAchievements(false)}>✕</button>
             </div>
             <div className="achievements-list">
               {[
-                { id: 'first_profit', name: '首次盈利', icon: '💰' },
-                { id: 'win_streak_5', name: '连赢5单', icon: '🔥' },
-                { id: 'profit_100', name: '百元大关', icon: '💵' },
-                { id: 'profit_1000', name: '千元富翁', icon: '💎' },
-                { id: 'trade_100', name: '百战老兵', icon: '⚔️' },
-                { id: 'win_rate_80', name: '神枪手', icon: '🎯' },
-                { id: 'dodge_crash', name: '躲过暴跌', icon: '🛡️' },
-                { id: 'catch_pump', name: '抓住暴涨', icon: '🚀' }
+                { id: 'first_profit', name: 'First Profit', icon: '💰' },
+                { id: 'win_streak_5', name: '5-Win Streak', icon: '🔥' },
+                { id: 'profit_100', name: '$100 Milestone', icon: '💵' },
+                { id: 'profit_1000', name: '$1000 Milestone', icon: '💎' },
+                { id: 'trade_100', name: 'Battle Veteran', icon: '⚔️' },
+                { id: 'win_rate_80', name: 'Sharpshooter', icon: '🎯' },
+                { id: 'dodge_crash', name: 'Crash Dodger', icon: '🛡️' },
+                { id: 'catch_pump', name: 'Pump Catcher', icon: '🚀' }
               ].map(achievement => {
                 const unlocked = unlockedAchievements.includes(achievement.id)
                 return (
@@ -260,7 +260,7 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
               })}
             </div>
             <div className="achievements-progress">
-              已解锁: {unlockedAchievements.length} / 8
+              Unlocked: {unlockedAchievements.length} / 8
             </div>
           </div>
         </div>

@@ -28,10 +28,10 @@ function SignalPanel({ signal, ticker }) {
   }, [selectedSymbol])
 
   const directionConfig = {
-    long: { icon: TrendingUp, color: 'bg-emerald-500', label: '做多', textColor: 'text-emerald-400' },
-    short: { icon: TrendingDown, color: 'bg-red-500', label: '做空', textColor: 'text-red-400' },
-    neutral: { icon: Minus, color: 'bg-slate-500', label: '观望', textColor: 'text-slate-400' },
-    close: { icon: Minus, color: 'bg-amber-500', label: '平仓', textColor: 'text-amber-400' },
+    long: { icon: TrendingUp, color: 'bg-emerald-500', label: 'Long', textColor: 'text-emerald-400' },
+    short: { icon: TrendingDown, color: 'bg-red-500', label: 'Short', textColor: 'text-red-400' },
+    neutral: { icon: Minus, color: 'bg-slate-500', label: 'Hold', textColor: 'text-slate-400' },
+    close: { icon: Minus, color: 'bg-amber-500', label: 'Close position', textColor: 'text-amber-400' },
   }
 
   const config = signal ? directionConfig[signal.direction] || directionConfig.neutral : directionConfig.neutral
@@ -40,7 +40,7 @@ function SignalPanel({ signal, ticker }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">信号分析</h2>
+        <h2 className="text-xl font-bold">SignalAnalysis</h2>
         <div className="flex items-center space-x-4">
           <select
             value={selectedSymbol}
@@ -62,16 +62,16 @@ function SignalPanel({ signal, ticker }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 当前信号 */}
+        {/* CurrentSignal */}
         <div className="card">
           <div className="flex items-center space-x-2 mb-4">
             <Zap className="w-5 h-5 text-primary-400" />
-            <h3 className="font-medium">当前交易信号</h3>
+            <h3 className="font-medium">CurrentTrading signal</h3>
           </div>
           
           {signal ? (
             <div className="space-y-4">
-              {/* 信号方向 */}
+              {/* Signal direction */}
               <div className="flex items-center justify-center py-6">
                 <div className={`w-24 h-24 rounded-full ${config.color} flex items-center justify-center`}>
                   <DirectionIcon className="w-12 h-12 text-white" />
@@ -82,10 +82,10 @@ function SignalPanel({ signal, ticker }) {
                 <p className="text-slate-400 text-sm mt-1">{signal.symbol}</p>
               </div>
 
-              {/* 信号详情 */}
+              {/* Signal Details */}
               <div className="space-y-3 pt-4 border-t border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">信号强度</span>
+                  <span className="text-slate-400">Signal Strength</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
                       <div 
@@ -97,45 +97,45 @@ function SignalPanel({ signal, ticker }) {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">置信度</span>
+                  <span className="text-slate-400">Confidence</span>
                   <span className="font-medium">{(signal.confidence * 100).toFixed(0)}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">信号来源</span>
+                  <span className="text-slate-400">Signal source</span>
                   <span className="font-medium">{signal.source || 'fusion'}</span>
                 </div>
                 {signal.entry_price && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">建议入场价</span>
+                    <span className="text-slate-400">Suggested entry price</span>
                     <span className="font-medium">${signal.entry_price?.toLocaleString()}</span>
                   </div>
                 )}
                 {signal.stop_loss && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">止损价</span>
+                    <span className="text-slate-400">Stop-loss Price</span>
                     <span className="font-medium text-red-400">${signal.stop_loss?.toLocaleString()}</span>
                   </div>
                 )}
                 {signal.take_profit && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">止盈价</span>
+                    <span className="text-slate-400">Take-profit Price</span>
                     <span className="font-medium text-emerald-400">${signal.take_profit?.toLocaleString()}</span>
                   </div>
                 )}
               </div>
 
-              {/* 信号原因 */}
+              {/* Signal reason */}
               {signal.reason && (
                 <div className="pt-4 border-t border-slate-700">
-                  <p className="text-slate-400 text-sm mb-2">信号原因</p>
+                  <p className="text-slate-400 text-sm mb-2">Signal reason</p>
                   <p className="text-sm">{signal.reason}</p>
                 </div>
               )}
 
-              {/* 证据列表 */}
+              {/* Evidence list */}
               {signal.evidence && signal.evidence.length > 0 && (
                 <div className="pt-4 border-t border-slate-700">
-                  <p className="text-slate-400 text-sm mb-2">支撑证据</p>
+                  <p className="text-slate-400 text-sm mb-2">Supporting Evidence</p>
                   <ul className="space-y-1">
                     {signal.evidence.map((e, i) => (
                       <li key={i} className="text-sm text-slate-300">• {e}</li>
@@ -147,24 +147,24 @@ function SignalPanel({ signal, ticker }) {
           ) : (
             <div className="text-center py-12 text-slate-400">
               <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>暂无交易信号</p>
-              <p className="text-sm mt-2">启动Agent后将自动生成信号</p>
+              <p>No trading signals available</p>
+              <p className="text-sm mt-2">Signals will be generated after starting the agent</p>
             </div>
           )}
         </div>
 
-        {/* 市场情绪 */}
+        {/* Market Sentiment */}
         <div className="card">
           <div className="flex items-center space-x-2 mb-4">
             <Brain className="w-5 h-5 text-primary-400" />
-            <h3 className="font-medium">市场情绪分析</h3>
+            <h3 className="font-medium">Market SentimentAnalysis</h3>
           </div>
           
           {sentiment ? (
             <div className="space-y-6">
-              {/* 恐惧贪婪指数 */}
+              {/* Fear & Greed Index */}
               <div>
-                <p className="text-slate-400 text-sm mb-2">恐惧贪婪指数</p>
+                <p className="text-slate-400 text-sm mb-2">Fear & Greed Index</p>
                 <div className="relative h-8 bg-gradient-to-r from-red-500 via-yellow-500 to-emerald-500 rounded-full overflow-hidden">
                   <div 
                     className="absolute top-0 bottom-0 w-1 bg-white"
@@ -172,9 +172,9 @@ function SignalPanel({ signal, ticker }) {
                   />
                 </div>
                 <div className="flex justify-between text-xs text-slate-400 mt-1">
-                  <span>极度恐惧</span>
-                  <span>中性</span>
-                  <span>极度贪婪</span>
+                  <span>Extreme Fear</span>
+                  <span>neutral</span>
+                  <span>Extreme Greed</span>
                 </div>
                 <div className="text-center mt-2">
                   <span className="text-2xl font-bold">{sentiment.fear_greed_index?.value || 50}</span>
@@ -182,44 +182,44 @@ function SignalPanel({ signal, ticker }) {
                 </div>
               </div>
 
-              {/* 情绪分析 */}
+              {/* SentimentAnalysis */}
               <div className="pt-4 border-t border-slate-700">
-                <p className="text-slate-400 text-sm mb-3">情绪分析</p>
+                <p className="text-slate-400 text-sm mb-3">SentimentAnalysis</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">情绪倾向</span>
+                    <span className="text-slate-400">Sentiment Tendency</span>
                     <span className={`font-medium ${
                       sentiment.sentiment?.sentiment === 'bullish' ? 'text-emerald-400' :
                       sentiment.sentiment?.sentiment === 'bearish' ? 'text-red-400' :
                       'text-slate-400'
                     }`}>
-                      {sentiment.sentiment?.sentiment === 'bullish' ? '看涨' :
-                       sentiment.sentiment?.sentiment === 'bearish' ? '看跌' : '中性'}
+                      {sentiment.sentiment?.sentiment === 'bullish' ? 'Bullish' :
+                       sentiment.sentiment?.sentiment === 'bearish' ? 'Bearish' : 'neutral'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">情绪分数</span>
+                    <span className="text-slate-400">Sentiment Score</span>
                     <span className="font-medium">
                       {((sentiment.sentiment?.score || 0) * 100).toFixed(0)}%
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">置信度</span>
+                    <span className="text-slate-400">Confidence</span>
                     <span className="font-medium">
                       {((sentiment.sentiment?.confidence || 0) * 100).toFixed(0)}%
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">数据源数量</span>
+                    <span className="text-slate-400">Number of data sources</span>
                     <span className="font-medium">{sentiment.sentiment?.sources_count || 0}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 关键词 */}
+              {/* Keywords */}
               {sentiment.sentiment?.keywords && sentiment.sentiment.keywords.length > 0 && (
                 <div className="pt-4 border-t border-slate-700">
-                  <p className="text-slate-400 text-sm mb-2">热门关键词</p>
+                  <p className="text-slate-400 text-sm mb-2">Trending Keywords</p>
                   <div className="flex flex-wrap gap-2">
                     {sentiment.sentiment.keywords.map((keyword, i) => (
                       <span 
@@ -236,7 +236,7 @@ function SignalPanel({ signal, ticker }) {
           ) : (
             <div className="text-center py-12 text-slate-400">
               <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>加载情绪数据中...</p>
+              <p>Loading sentiment data...</p>
             </div>
           )}
         </div>

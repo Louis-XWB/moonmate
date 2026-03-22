@@ -38,12 +38,12 @@ function ConfigPanel() {
         })
       })
       if (res.ok) {
-        setMessage({ type: 'success', text: '配置保存成功' })
+        setMessage({ type: 'success', text: 'Configuration saved successfully' })
       } else {
         throw new Error('Save failed')
       }
     } catch (err) {
-      setMessage({ type: 'error', text: '保存失败: ' + err.message })
+      setMessage({ type: 'error', text: 'Save failed: ' + err.message })
     } finally {
       setSaving(false)
     }
@@ -67,7 +67,7 @@ function ConfigPanel() {
     return (
       <div className="card text-center py-12">
         <RefreshCw className="w-8 h-8 mx-auto mb-4 animate-spin text-slate-400" />
-        <p className="text-slate-400">加载配置中...</p>
+        <p className="text-slate-400">Loading configuration...</p>
       </div>
     )
   }
@@ -75,29 +75,29 @@ function ConfigPanel() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">系统配置</h2>
+        <h2 className="text-xl font-bold">System Settings</h2>
         <div className="flex items-center space-x-2">
-          <button 
+          <button
             onClick={fetchConfig}
             className="btn btn-secondary"
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button 
+          <button
             onClick={saveConfig}
             className="btn btn-primary flex items-center space-x-2"
             disabled={saving}
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? '保存中...' : '保存配置'}</span>
+            <span>{saving ? 'Saving...' : 'Save Settings'}</span>
           </button>
         </div>
       </div>
 
       {message && (
         <div className={`p-3 rounded-lg ${
-          message.type === 'success' 
+          message.type === 'success'
             ? 'bg-emerald-900/50 border border-emerald-700 text-emerald-200'
             : 'bg-red-900/50 border border-red-700 text-red-200'
         }`}>
@@ -105,15 +105,15 @@ function ConfigPanel() {
         </div>
       )}
 
-      {/* 交易配置 */}
+      {/* Trading configuration */}
       <div className="card">
         <h3 className="font-medium mb-4 flex items-center space-x-2">
           <Settings className="w-5 h-5 text-primary-400" />
-          <span>交易配置</span>
+          <span>Trading Configuration</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-slate-400 text-sm mb-1">基础货币</label>
+            <label className="block text-slate-400 text-sm mb-1">Base Currency</label>
             <input
               type="text"
               value={config.trading?.base_currency || 'USDT'}
@@ -122,7 +122,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">最大持仓金额</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Position Size</label>
             <input
               type="number"
               value={config.trading?.max_position_size || 1000}
@@ -131,7 +131,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">单笔最大金额</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Single Order</label>
             <input
               type="number"
               value={config.trading?.max_single_order || 100}
@@ -140,7 +140,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">杠杆倍数</label>
+            <label className="block text-slate-400 text-sm mb-1">Leverage</label>
             <input
               type="number"
               value={config.trading?.leverage || 1}
@@ -151,7 +151,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">最小下单间隔(秒)</label>
+            <label className="block text-slate-400 text-sm mb-1">Min Order Interval (sec)</label>
             <input
               type="number"
               value={config.trading?.min_order_interval || 60}
@@ -162,15 +162,15 @@ function ConfigPanel() {
         </div>
       </div>
 
-      {/* 风控配置 */}
+      {/* Risk control configuration */}
       <div className="card">
         <h3 className="font-medium mb-4 flex items-center space-x-2">
           <Settings className="w-5 h-5 text-amber-400" />
-          <span>风控配置</span>
+          <span>Risk Control Configuration</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-slate-400 text-sm mb-1">日最大亏损金额</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Daily Loss Amount</label>
             <input
               type="number"
               value={config.risk?.max_daily_loss || 100}
@@ -179,7 +179,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">日最大亏损百分比</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Daily Loss (%)</label>
             <input
               type="number"
               value={config.risk?.max_daily_loss_pct || 5}
@@ -189,7 +189,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">最大回撤百分比</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Drawdown (%)</label>
             <input
               type="number"
               value={config.risk?.max_drawdown || 10}
@@ -199,7 +199,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">止损百分比</label>
+            <label className="block text-slate-400 text-sm mb-1">Stop Loss (%)</label>
             <input
               type="number"
               value={config.risk?.stop_loss_pct || 2}
@@ -209,7 +209,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">止盈百分比</label>
+            <label className="block text-slate-400 text-sm mb-1">Take Profit (%)</label>
             <input
               type="number"
               value={config.risk?.take_profit_pct || 5}
@@ -219,7 +219,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">最大连续亏损次数</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Consecutive Losses</label>
             <input
               type="number"
               value={config.risk?.max_consecutive_losses || 5}
@@ -228,7 +228,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">冷却期(秒)</label>
+            <label className="block text-slate-400 text-sm mb-1">Cooldown Period (sec)</label>
             <input
               type="number"
               value={config.risk?.cooldown_period || 3600}
@@ -237,7 +237,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">最大持仓数量</label>
+            <label className="block text-slate-400 text-sm mb-1">Max Open Positions</label>
             <input
               type="number"
               value={config.risk?.position_limit || 3}
@@ -248,26 +248,26 @@ function ConfigPanel() {
         </div>
       </div>
 
-      {/* AI配置 */}
+      {/* AI configuration */}
       <div className="card">
         <h3 className="font-medium mb-4 flex items-center space-x-2">
           <Settings className="w-5 h-5 text-emerald-400" />
-          <span>AI配置</span>
+          <span>AI Configuration</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-slate-400 text-sm mb-1">启用AI信号</label>
+            <label className="block text-slate-400 text-sm mb-1">Enable AI Signals</label>
             <select
               value={config.ai?.enabled ? 'true' : 'false'}
               onChange={(e) => updateConfig('ai', 'enabled', e.target.value === 'true')}
               className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2"
             >
-              <option value="true">启用</option>
-              <option value="false">禁用</option>
+              <option value="true">Enabled</option>
+              <option value="false">Disabled</option>
             </select>
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">模型</label>
+            <label className="block text-slate-400 text-sm mb-1">Model</label>
             <select
               value={config.ai?.model || 'gpt-4.1-mini'}
               onChange={(e) => updateConfig('ai', 'model', e.target.value)}
@@ -279,7 +279,7 @@ function ConfigPanel() {
             </select>
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">温度</label>
+            <label className="block text-slate-400 text-sm mb-1">Temperature</label>
             <input
               type="number"
               value={config.ai?.temperature || 0.3}
@@ -291,7 +291,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">置信度阈值</label>
+            <label className="block text-slate-400 text-sm mb-1">Confidence Threshold</label>
             <input
               type="number"
               value={config.ai?.confidence_threshold || 0.6}
@@ -303,7 +303,7 @@ function ConfigPanel() {
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">信号有效期(秒)</label>
+            <label className="block text-slate-400 text-sm mb-1">Signal TTL (sec)</label>
             <input
               type="number"
               value={config.ai?.signal_ttl || 300}
@@ -314,20 +314,20 @@ function ConfigPanel() {
         </div>
       </div>
 
-      {/* 环境信息 */}
+      {/* Environment info */}
       <div className="card">
-        <h3 className="font-medium mb-4">环境信息</h3>
+        <h3 className="font-medium mb-4">Environment Info</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-slate-400">运行环境:</span>
+            <span className="text-slate-400">Environment:</span>
             <span className="ml-2 font-medium">{config.env || 'dev'}</span>
           </div>
           <div>
-            <span className="text-slate-400">调试模式:</span>
-            <span className="ml-2 font-medium">{config.debug ? '开启' : '关闭'}</span>
+            <span className="text-slate-400">Debug Mode:</span>
+            <span className="ml-2 font-medium">{config.debug ? 'On' : 'Off'}</span>
           </div>
           <div>
-            <span className="text-slate-400">API端口:</span>
+            <span className="text-slate-400">API Port:</span>
             <span className="ml-2 font-medium">{config.api_port || 8000}</span>
           </div>
         </div>

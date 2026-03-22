@@ -1,6 +1,6 @@
 """
-策略基类
-定义策略接口和通用功能
+Strategy base class
+Defines strategy interface and common functionality
 """
 
 from abc import ABC, abstractmethod
@@ -12,7 +12,7 @@ from backend.data.models import Signal, SignalDirection, Ticker, Kline, Position
 
 
 class StrategyState(BaseModel):
-    """策略状态"""
+    """Strategy state"""
     name: str
     enabled: bool = True
     last_signal: Optional[Signal] = None
@@ -23,7 +23,7 @@ class StrategyState(BaseModel):
 
 
 class BaseStrategy(ABC):
-    """策略基类"""
+    """Strategy base class"""
     
     def __init__(self, name: str, params: Optional[Dict[str, Any]] = None):
         self.name = name
@@ -49,7 +49,7 @@ class BaseStrategy(ABC):
         position: Optional[Position] = None,
         context: Optional[Dict[str, Any]] = None
     ) -> Signal:
-        """生成交易信号"""
+        """Generate trading signal"""
         pass
     
     async def run(
@@ -60,7 +60,7 @@ class BaseStrategy(ABC):
         position: Optional[Position] = None,
         context: Optional[Dict[str, Any]] = None
     ) -> Signal:
-        """运行策略"""
+        """Run strategy"""
         if not self._enabled:
             return Signal(
                 symbol=symbol,
@@ -73,7 +73,7 @@ class BaseStrategy(ABC):
         
         signal = await self.generate_signal(symbol, ticker, klines, position, context)
         
-        # 更新状态
+        # Update state
         self.state.last_signal = signal
         self.state.last_run = datetime.now()
         self.state.run_count += 1
@@ -83,14 +83,14 @@ class BaseStrategy(ABC):
         return signal
     
     def get_state(self) -> StrategyState:
-        """获取策略状态"""
+        """Get strategy state"""
         return self.state
     
     def update_params(self, params: Dict[str, Any]):
-        """更新策略参数"""
+        """Update strategy parameters"""
         self.params.update(params)
         self.state.params = self.params
     
     def reset(self):
-        """重置策略状态"""
+        """Reset strategy state"""
         self.state = StrategyState(name=self.name, params=self.params)

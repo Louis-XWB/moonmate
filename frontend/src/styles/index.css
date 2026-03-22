@@ -22,7 +22,7 @@ body {
   color: var(--text-primary);
 }
 
-/* 自定义滚动条 */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -41,12 +41,12 @@ body {
   background: #64748b;
 }
 
-/* 卡片样式 */
+/* Card styles */
 .card {
   @apply bg-slate-800 rounded-lg border border-slate-700 p-4;
 }
 
-/* 按钮样式 */
+/* Button styles */
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
 }
@@ -67,7 +67,7 @@ body {
   @apply bg-slate-600 hover:bg-slate-700 text-white;
 }
 
-/* 状态指示器 */
+/* Status indicator */
 .status-dot {
   @apply w-2 h-2 rounded-full;
 }
@@ -90,7 +90,7 @@ body {
   }
 }
 
-/* 价格变化颜色 */
+/* Price change colors */
 .price-up {
   @apply text-emerald-400;
 }
@@ -99,7 +99,7 @@ body {
   @apply text-red-400;
 }
 
-/* 表格样式 */
+/* Table styles */
 .table-container {
   @apply overflow-x-auto;
 }

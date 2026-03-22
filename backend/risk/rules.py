@@ -1,6 +1,6 @@
 """
-风控规则定义
-定义各种风控规则的基类和具体实现
+Risk control rule definitions
+Defines base classes and concrete implementations of various risk control rules
 """
 
 from abc import ABC, abstractmethod
@@ -12,22 +12,22 @@ from backend.data.models import Order, Position, Signal
 
 
 class RiskCheckResult(BaseModel):
-    """风控检查结果"""
+    """Risk check result"""
     passed: bool = True
     rule_name: str = ""
     reason: str = ""
     severity: str = Field(default="info", description="info/warning/critical")
-    suggested_action: str = Field(default="", description="建议操作")
+    suggested_action: str = Field(default="", description="Suggested action")
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RiskRule(ABC):
-    """风控规则基类"""
+    """Risk rule base class"""
     
     def __init__(self, name: str, enabled: bool = True, priority: int = 0):
         self.name = name
         self.enabled = enabled
-        self.priority = priority  # 优先级越高越先执行
+        self.priority = priority  # Higher priority executes first
     
     @abstractmethod
     def check(
@@ -37,11 +37,11 @@ class RiskRule(ABC):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        """执行风控检查"""
+        """Execute risk check"""
         pass
     
     def _pass(self, reason: str = "") -> RiskCheckResult:
-        """返回通过结果"""
+        """Return a pass result"""
         return RiskCheckResult(
             passed=True,
             rule_name=self.name,
@@ -55,7 +55,7 @@ class RiskRule(ABC):
         suggested_action: str = "",
         metadata: Optional[Dict] = None
     ) -> RiskCheckResult:
-        """返回失败结果"""
+        """Return a fail result"""
         return RiskCheckResult(
             passed=False,
             rule_name=self.name,
@@ -67,7 +67,7 @@ class RiskRule(ABC):
 
 
 class PositionLimitRule(RiskRule):
-    """持仓限制规则"""
+    """Position limit rule"""
     
     def __init__(
         self,
@@ -87,32 +87,32 @@ class PositionLimitRule(RiskRule):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        # 检查持仓数量
+        # Check position count
         active_positions = [p for p in positions if p.size > 0]
         if len(active_positions) >= self.max_positions:
-            # 检查是否是平仓信号
+            # Check if this is a close signal
             existing = [p for p in active_positions if p.symbol == signal.symbol]
             if not existing:
                 return self._fail(
-                    f"持仓数量已达上限({len(active_positions)}/{self.max_positions})",
+                    f"Position count has reached the limit({len(active_positions)}/{self.max_positions})",
                     severity="warning",
-                    suggested_action="等待现有持仓平仓后再开新仓"
+                    suggested_action="Wait for existing positions to close before opening new ones"
                 )
         
-        # 检查单个持仓大小
+        # Check individual position size
         for pos in active_positions:
             if pos.symbol == signal.symbol and pos.notional > self.max_position_size:
                 return self._fail(
-                    f"{signal.symbol}持仓已达上限(${pos.notional:.2f}/${self.max_position_size})",
+                    f"{signal.symbol}position has reached the limit(${pos.notional:.2f}/${self.max_position_size})",
                     severity="warning",
-                    suggested_action="减仓或等待"
+                    suggested_action="Reduce position or wait"
                 )
         
         return self._pass()
 
 
 class DailyLossRule(RiskRule):
-    """日亏损限制规则"""
+    """Daily loss limit rule"""
     
     def __init__(
         self,
@@ -130,32 +130,32 @@ class DailyLossRule(RiskRule):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        # 获取今日盈亏
+        # Get daily PnL
         daily_pnl = context.get("daily_pnl", 0)
         initial_balance = context.get("initial_balance", 10000)
         
-        # 检查绝对亏损
+        # Check absolute loss
         if daily_pnl < -self.max_daily_loss:
             return self._fail(
-                f"今日亏损已达上限(${abs(daily_pnl):.2f}/${self.max_daily_loss})",
+                f"Today's loss has reached the limit(${abs(daily_pnl):.2f}/${self.max_daily_loss})",
                 severity="critical",
-                suggested_action="停止交易，等待明日"
+                suggested_action="Stop trading, wait until tomorrow"
             )
         
-        # 检查百分比亏损
+        # Check percentage loss
         loss_pct = abs(daily_pnl) / initial_balance * 100 if initial_balance > 0 else 0
         if daily_pnl < 0 and loss_pct > self.max_daily_loss_pct:
             return self._fail(
-                f"今日亏损百分比已达上限({loss_pct:.1f}%/{self.max_daily_loss_pct}%)",
+                f"Today's loss percentage has reached the limit({loss_pct:.1f}%/{self.max_daily_loss_pct}%)",
                 severity="critical",
-                suggested_action="停止交易，等待明日"
+                suggested_action="Stop trading, wait until tomorrow"
             )
         
         return self._pass()
 
 
 class DrawdownRule(RiskRule):
-    """回撤限制规则"""
+    """Drawdown limit rule"""
     
     def __init__(self, max_drawdown: float = 10.0):
         super().__init__("drawdown", priority=95)
@@ -168,21 +168,21 @@ class DrawdownRule(RiskRule):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        # 获取当前回撤
+        # Get current drawdown
         current_drawdown = context.get("current_drawdown", 0)
         
         if current_drawdown > self.max_drawdown:
             return self._fail(
-                f"当前回撤已达上限({current_drawdown:.1f}%/{self.max_drawdown}%)",
+                f"Current drawdown has reached the limit({current_drawdown:.1f}%/{self.max_drawdown}%)",
                 severity="critical",
-                suggested_action="减仓或停止交易"
+                suggested_action="Reduce position or stop trading"
             )
         
         return self._pass()
 
 
 class ConsecutiveLossRule(RiskRule):
-    """连续亏损规则"""
+    """Consecutive loss rule"""
     
     def __init__(self, max_consecutive_losses: int = 5, cooldown_minutes: int = 60):
         super().__init__("consecutive_loss", priority=85)
@@ -197,35 +197,35 @@ class ConsecutiveLossRule(RiskRule):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        # 检查冷却期
+        # Check cooldown period
         if self._cooldown_until and datetime.now() < self._cooldown_until:
             remaining = (self._cooldown_until - datetime.now()).seconds // 60
             return self._fail(
-                f"冷却期中，剩余{remaining}分钟",
+                f"In cooldown period, remaining minutes remaining",
                 severity="warning",
-                suggested_action=f"等待{remaining}分钟后再交易"
+                suggested_action=f"Wait remaining minutes before trading again"
             )
         
-        # 获取连续亏损次数
+        # Get consecutive loss count
         consecutive_losses = context.get("consecutive_losses", 0)
         
         if consecutive_losses >= self.max_consecutive_losses:
             self._cooldown_until = datetime.now() + timedelta(minutes=self.cooldown_minutes)
             return self._fail(
-                f"连续亏损{consecutive_losses}次，触发冷却期",
+                f"Consecutive losses {consecutive_losses} times, triggering cooldown",
                 severity="warning",
-                suggested_action=f"进入{self.cooldown_minutes}分钟冷却期"
+                suggested_action=f"Entering self.cooldown_minutes-minute cooldown period"
             )
         
         return self._pass()
     
     def reset_cooldown(self):
-        """重置冷却期"""
+        """Reset cooldown period"""
         self._cooldown_until = None
 
 
 class PriceProtectionRule(RiskRule):
-    """价格保护规则"""
+    """Price protection rule"""
     
     def __init__(self, max_slippage_pct: float = 1.0, max_spread_pct: float = 0.5):
         super().__init__("price_protection", priority=80)
@@ -239,28 +239,28 @@ class PriceProtectionRule(RiskRule):
         orders: List[Order],
         context: Dict[str, Any]
     ) -> RiskCheckResult:
-        # 获取当前市场数据
+        # Get current market data
         ticker = context.get("ticker")
         if not ticker:
             return self._pass()
         
-        # 检查价差
+        # Check spread
         spread_pct = ticker.spread
         if spread_pct > self.max_spread_pct:
             return self._fail(
-                f"买卖价差过大({spread_pct:.2f}%>{self.max_spread_pct}%)",
+                f"Bid-Ask Spread too wide({spread_pct:.2f}%>{self.max_spread_pct}%)",
                 severity="warning",
-                suggested_action="等待价差收窄"
+                suggested_action="Wait for spread to narrow"
             )
         
-        # 检查信号价格与当前价格的偏差
+        # Check deviation between signal price and current price
         if signal.entry_price:
             slippage = abs(signal.entry_price - ticker.last_price) / ticker.last_price * 100
             if slippage > self.max_slippage_pct:
                 return self._fail(
-                    f"价格偏差过大({slippage:.2f}%>{self.max_slippage_pct}%)",
+                    f"Price deviation too large({slippage:.2f}%>{self.max_slippage_pct}%)",
                     severity="warning",
-                    suggested_action="重新获取信号"
+                    suggested_action="Re-fetch signal"
                 )
         
         return self._pass()

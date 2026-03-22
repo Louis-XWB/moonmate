@@ -1,77 +1,77 @@
 # Auto Trading Agent - Dockerfile
-# 多阶段构建，优化镜像大小
+# Multi-stage build, optimized for image size
 
 # ============================================
-# Stage 1: 构建前端
+# Stage 1: Build frontend
 # ============================================
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
-# 复制前端依赖文件
+# Copy frontend dependency files
 COPY frontend/package.json frontend/pnpm-lock.yaml* ./
 
-# 安装 pnpm 并安装依赖
+# Install pnpm and install dependencies
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
-# 复制前端源码
+# Copy frontend source code
 COPY frontend/ ./
 
-# 构建前端
+# Build frontend
 RUN pnpm build
 
 # ============================================
-# Stage 2: 后端运行环境
+# Stage 2: Backend runtime environment
 # ============================================
 FROM python:3.11-slim AS backend
 
-# 设置环境变量
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
 WORKDIR /app
 
-# 安装系统依赖
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制并安装 Python 依赖
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制后端代码
+# Copy backend code
 COPY backend/ ./backend/
 COPY config/ ./config/
 
-# 从前端构建阶段复制构建产物
+# Copy build artifacts from frontend build stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# 创建非 root 用户
+# Create non-root user
 RUN useradd -m -u 1000 trader && \
     chown -R trader:trader /app
 
 USER trader
 
-# 暴露端口
+# Expose port
 EXPOSE 8000
 
-# 健康检查
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
-# 启动命令
+# Start command
 CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ============================================
-# Stage 3: 开发环境（可选）
+# Stage 3: Development environment (optional)
 # ============================================
 FROM backend AS development
 
 USER root
 
-# 安装开发依赖
+# Install development dependencies
 RUN pip install --no-cache-dir \
     pytest \
     pytest-asyncio \
@@ -82,5 +82,5 @@ RUN pip install --no-cache-dir \
 
 USER trader
 
-# 开发模式启动
+# Start in development mode
 CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

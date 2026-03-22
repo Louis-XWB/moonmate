@@ -12,11 +12,11 @@ const WhaleTrackerPanel = () => {
     setLoading(true);
     setError(null);
     try {
-      // 获取分析数据
+      // Get analysis data
       const analysisResponse = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/whale/analysis?symbol=BTC/USDT');
       const analysisResult = await analysisResponse.json();
       
-      // 获取警报
+      // Get alerts
       const alertsResponse = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/whale/alerts?symbol=BTC/USDT');
       const alertsResult = await alertsResponse.json();
       
@@ -67,9 +67,9 @@ const WhaleTrackerPanel = () => {
 
   const getSentimentText = (sentiment) => {
     const map = {
-      'bullish': '看多',
-      'bearish': '看空',
-      'neutral': '中性'
+      'bullish': 'Bullish',
+      'bearish': 'Bearish',
+      'neutral': 'neutral'
     };
     return map[sentiment] || sentiment;
   };
@@ -98,13 +98,13 @@ const WhaleTrackerPanel = () => {
 
   return (
     <div className="space-y-6">
-      {/* 标题和控制 */}
+      {/* Title and Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-3xl">🐋</span>
-          <h2 className="text-2xl font-bold text-white">鲸鱼追踪</h2>
+          <h2 className="text-2xl font-bold text-white">Whale Tracker</h2>
           <span className="px-3 py-1 text-xs font-semibold text-blue-300 bg-blue-900/30 border border-blue-500/50 rounded-full">
-            链上数据
+            On-Chain Data
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -115,7 +115,7 @@ const WhaleTrackerPanel = () => {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
             />
-            自动刷新
+            Auto Refresh
           </label>
           <button
             onClick={fetchData}
@@ -123,12 +123,12 @@ const WhaleTrackerPanel = () => {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            刷新
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* 错误提示 */}
+      {/* Error Message */}
       {error && (
         <div className="flex items-center gap-2 p-4 text-red-300 bg-red-900/20 border border-red-500/50 rounded-lg">
           <AlertTriangle className="w-5 h-5" />
@@ -136,22 +136,22 @@ const WhaleTrackerPanel = () => {
         </div>
       )}
 
-      {/* 加载状态 */}
+      {/* Loading Status */}
       {loading && !analysis && (
         <div className="flex items-center justify-center p-12">
           <div className="flex flex-col items-center gap-3">
             <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
-            <p className="text-gray-400">正在追踪鲸鱼...</p>
+            <p className="text-gray-400">Tracking whales...</p>
           </div>
         </div>
       )}
 
-      {/* 警报 */}
+      {/* Alerts */}
       {alerts && alerts.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
-            鲸鱼警报
+            Whale Alerts
           </h3>
           {alerts.map((alert, index) => (
             <div
@@ -162,13 +162,13 @@ const WhaleTrackerPanel = () => {
               {alert.details && (
                 <div className="text-sm text-gray-400 space-y-1">
                   {alert.details.address && (
-                    <p>地址: {alert.details.address.slice(0, 10)}...{alert.details.address.slice(-8)}</p>
+                    <p>Address: {alert.details.address.slice(0, 10)}...{alert.details.address.slice(-8)}</p>
                   )}
                   {alert.details.size && (
-                    <p>仓位: {formatNumber(alert.details.size)}</p>
+                    <p>Position: {formatNumber(alert.details.size)}</p>
                   )}
                   {alert.details.net_flow && (
-                    <p>净流动: {formatNumber(Math.abs(alert.details.net_flow))}</p>
+                    <p>Net Flow: {formatNumber(Math.abs(alert.details.net_flow))}</p>
                   )}
                 </div>
               )}
@@ -177,14 +177,14 @@ const WhaleTrackerPanel = () => {
         </div>
       )}
 
-      {/* 分析概览 */}
+      {/* Analysis Overview */}
       {analysis && (
         <div className="space-y-6">
-          {/* 统计卡片 */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-gradient-to-br from-blue-900/40 to-purple-900/40 border border-blue-500/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">鲸鱼数量</span>
+                <span className="text-sm text-gray-400">Whale Count</span>
                 <span className="text-2xl">🐋</span>
               </div>
               <p className="text-2xl font-bold text-white">{analysis.whale_count}</p>
@@ -192,7 +192,7 @@ const WhaleTrackerPanel = () => {
 
             <div className="p-4 bg-gradient-to-br from-green-900/40 to-blue-900/40 border border-green-500/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">做多仓位</span>
+                <span className="text-sm text-gray-400">Long positions </span>
                 <TrendingUp className="w-5 h-5 text-green-400" />
               </div>
               <p className="text-2xl font-bold text-green-400">{formatNumber(analysis.total_long_size)}</p>
@@ -200,7 +200,7 @@ const WhaleTrackerPanel = () => {
 
             <div className="p-4 bg-gradient-to-br from-red-900/40 to-purple-900/40 border border-red-500/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">做空仓位</span>
+                <span className="text-sm text-gray-400">Short positions </span>
                 <TrendingDown className="w-5 h-5 text-red-400" />
               </div>
               <p className="text-2xl font-bold text-red-400">{formatNumber(analysis.total_short_size)}</p>
@@ -208,7 +208,7 @@ const WhaleTrackerPanel = () => {
 
             <div className="p-4 bg-gradient-to-br from-yellow-900/40 to-orange-900/40 border border-yellow-500/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">净流动</span>
+                <span className="text-sm text-gray-400">Net Flow</span>
                 <DollarSign className="w-5 h-5 text-yellow-400" />
               </div>
               <p className={`text-2xl font-bold ${analysis.net_flow > 0 ? 'text-green-400' : analysis.net_flow < 0 ? 'text-red-400' : 'text-gray-400'}`}>
@@ -217,10 +217,10 @@ const WhaleTrackerPanel = () => {
             </div>
           </div>
 
-          {/* 市场情绪 */}
+          {/* Market Sentiment */}
           <div className="p-6 bg-gray-800/50 border border-gray-700 rounded-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">市场情绪</h3>
+              <h3 className="text-lg font-semibold text-white">Market Sentiment</h3>
               <div className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${getSentimentColor(analysis.sentiment)}`}>
                 {getSentimentIcon(analysis.sentiment)}
                 <span className="font-semibold">{getSentimentText(analysis.sentiment)}</span>
@@ -228,7 +228,7 @@ const WhaleTrackerPanel = () => {
             </div>
             
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm text-gray-400">置信度:</span>
+              <span className="text-sm text-gray-400">Confidence:</span>
               <div className="flex items-center gap-2 flex-1">
                 <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
                   <div
@@ -245,9 +245,9 @@ const WhaleTrackerPanel = () => {
             </div>
           </div>
 
-          {/* 前10大户 */}
+          {/* Top 10 Whales */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-white">🏆 前10大户</h3>
+            <h3 className="text-lg font-semibold text-white">🏆 Top 10 Whales</h3>
             <div className="space-y-2">
               {analysis.top_whales.map((whale, index) => (
                 <div
@@ -263,7 +263,7 @@ const WhaleTrackerPanel = () => {
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`px-2 py-0.5 text-xs font-semibold rounded ${whale.side === 'long' ? 'text-green-300 bg-green-900/30' : 'text-red-300 bg-red-900/30'}`}>
-                            {whale.side === 'long' ? '做多' : '做空'}
+                            {whale.side === 'long' ? 'Long' : 'Short'}
                           </span>
                           <span className="text-xs text-gray-500">{whale.leverage.toFixed(1)}x</span>
                         </div>
@@ -279,15 +279,15 @@ const WhaleTrackerPanel = () => {
 
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-400">成本价</p>
+                      <p className="text-gray-400">Entry Price</p>
                       <p className="font-semibold text-white">${whale.entry_price.toFixed(2)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">当前价</p>
+                      <p className="text-gray-400">Current Price</p>
                       <p className="font-semibold text-white">${whale.current_price.toFixed(2)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-400">清算价</p>
+                      <p className="text-gray-400">Liquidation Price</p>
                       <p className="font-semibold text-yellow-400">
                         {whale.liquidation_price ? `$${whale.liquidation_price.toFixed(2)}` : 'N/A'}
                       </p>
@@ -298,10 +298,10 @@ const WhaleTrackerPanel = () => {
             </div>
           </div>
 
-          {/* 最近活动 */}
+          {/* Recent Activity */}
           {analysis.recent_activities && analysis.recent_activities.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-white">📊 最近活动</h3>
+              <h3 className="text-lg font-semibold text-white">📊 Recent Activity</h3>
               <div className="space-y-2">
                 {analysis.recent_activities.map((activity, index) => (
                   <div
@@ -323,7 +323,7 @@ const WhaleTrackerPanel = () => {
                       <span className="text-sm text-gray-400">@ ${activity.price.toFixed(2)}</span>
                     </div>
                     <span className="text-xs text-gray-500">
-                      {new Date(activity.timestamp).toLocaleTimeString('zh-CN')}
+                      {new Date(activity.timestamp).toLocaleTimeString('en-US')}
                     </span>
                   </div>
                 ))}

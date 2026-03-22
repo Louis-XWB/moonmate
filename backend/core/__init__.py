@@ -1,5 +1,5 @@
 # Auto Trading Agent - Core Module
-# 核心模块：配置管理、事件总线、日志系统
+# Core module: configuration management, event bus, logging system
 
 from .config import Config, TradingConfig, RiskConfig
 from .events import EventBus, Event, EventType

@@ -5,38 +5,38 @@ const DecisionFlowMatrix = () => {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [zoom, setZoom] = useState(0.8);  // 缩放比例，默认0.8 (80%)
+  const [zoom, setZoom] = useState(0.8);  // Zoom ratio, default 0.8 (80%)
   const canvasRef = useRef(null);
 
-  // 节点定义 - 横向布局
+  // Node definitions - horizontal layout
   const layers = [
     {
       id: 'dataLayer',
       title: 'DATA',
-      subtitle: '数据层',
+      subtitle: 'Data Layer',
       nodes: [
-        { id: 'marketData', label: '行情', icon: '📊', expandable: true },
-        { id: 'newsData', label: '新闻', icon: '📰', expandable: true },
-        { id: 'socialMedia', label: '社交', icon: '💬', expandable: true },
-        { id: 'onchainData', label: '链上', icon: '⛓️', expandable: true },
-        { id: 'technicalIndicators', label: '指标', icon: '📈', expandable: true }
+        { id: 'marketData', label: 'Market', icon: '📊', expandable: true },
+        { id: 'newsData', label: 'News', icon: '📰', expandable: true },
+        { id: 'socialMedia', label: 'Social', icon: '💬', expandable: true },
+        { id: 'onchainData', label: 'On-chain', icon: '⛓️', expandable: true },
+        { id: 'technicalIndicators', label: 'Indicators', icon: '📈', expandable: true }
       ]
     },
     {
       id: 'aiLayer',
       title: 'AI',
-      subtitle: 'AI分析',
+      subtitle: 'AI Analysis',
       nodes: [
-        { id: 'sentimentAnalysis', label: '情绪', icon: '😊' },
+        { id: 'sentimentAnalysis', label: 'Sentiment', icon: '😊' },
         { id: 'multiAgent', label: 'Agent', icon: '🤖', expandable: true },
-        { id: 'newsAnalysis', label: '分析', icon: '📋' },
-        { id: 'whaleTracking', label: '鲸鱼', icon: '🐋' }
+        { id: 'newsAnalysis', label: 'Analysis', icon: '📋' },
+        { id: 'whaleTracking', label: 'Whale', icon: '🐋' }
       ]
     },
     {
       id: 'rulesLayer',
       title: 'RULES',
-      subtitle: '规则',
+      subtitle: 'Rules',
       nodes: [
         { id: 'vibeRules', label: 'Vibe', icon: '⚡', expandable: true }
       ]
@@ -44,35 +44,35 @@ const DecisionFlowMatrix = () => {
     {
       id: 'riskLayer',
       title: 'RISK',
-      subtitle: '风控',
+      subtitle: 'Risk Control',
       nodes: [
-        { id: 'riskControl', label: '风控', icon: '🛡️', expandable: true }
+        { id: 'riskControl', label: 'Risk', icon: '🛡️', expandable: true }
       ]
     },
     {
       id: 'executeLayer',
       title: 'EXEC',
-      subtitle: '执行',
+      subtitle: 'Execution',
       nodes: [
-        { id: 'executeTrade', label: '交易', icon: '⚙️' }
+        { id: 'executeTrade', label: 'Trade', icon: '⚙️' }
       ]
     }
   ];
 
-  // 加载配置
+  // Load configuration
   useEffect(() => {
     fetchConfig();
     syncVibeRules();
   }, []);
 
-  // 动画效果
+  // Animation effects
   useEffect(() => {
     if (!canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
-    // 设置canvas尺寸
+
+    // Set canvas dimensions
     const resizeCanvas = () => {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
@@ -80,10 +80,10 @@ const DecisionFlowMatrix = () => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // 粒子系统
+    // Particle system
     const particles = [];
     const particleCount = 30;
-    
+
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -95,12 +95,12 @@ const DecisionFlowMatrix = () => {
       });
     }
 
-    // 动画循环
+    // Animation loop
     let animationId;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 绘制扫描线
+      // Draw scan line
       const scanLineY = (Date.now() / 20) % canvas.height;
       const gradient = ctx.createLinearGradient(0, scanLineY - 50, 0, scanLineY + 50);
       gradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
@@ -109,7 +109,7 @@ const DecisionFlowMatrix = () => {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, scanLineY - 50, canvas.width, 100);
 
-      // 更新和绘制粒子
+      // Update and draw particles
       particles.forEach(particle => {
         particle.x += particle.vx;
         particle.y += particle.vy;
@@ -123,7 +123,7 @@ const DecisionFlowMatrix = () => {
         ctx.fillStyle = `rgba(0, 255, 255, ${particle.opacity})`;
         ctx.fill();
 
-        // 绘制粒子轨迹
+        // Draw particle trails
         ctx.beginPath();
         ctx.moveTo(particle.x, particle.y);
         ctx.lineTo(particle.x - particle.vx * 10, particle.y - particle.vy * 10);
@@ -160,7 +160,7 @@ const DecisionFlowMatrix = () => {
   const syncVibeRules = async () => {
     try {
       await fetch('/api/decision-flow/sync-vibe-rules', { method: 'POST' });
-      // 同步后重新加载配置
+      // Reload configuration after sync
       setTimeout(fetchConfig, 500);
     } catch (error) {
       console.error('Failed to sync vibe rules:', error);
@@ -214,8 +214,8 @@ const DecisionFlowMatrix = () => {
   };
 
   const resetConfig = async () => {
-    if (!confirm('确定要重置为默认配置吗？')) return;
-    
+    if (!confirm('Are you sure you want to reset to default configuration?')) return;
+
     try {
       setSaving(true);
       const response = await fetch('/api/decision-flow/reset', {
@@ -252,7 +252,7 @@ const DecisionFlowMatrix = () => {
           {isEnabled && <div className="h-node-pulse"></div>}
         </div>
 
-        {/* 子节点 - 在右侧显示 */}
+        {/* Sub-nodes - displayed on the right */}
         {hasSubNodes && (
           <div className="h-sub-nodes">
             {nodeConfig.sub_nodes.map((subNode, idx) => (
@@ -265,15 +265,15 @@ const DecisionFlowMatrix = () => {
                     toggleSubNode(node.id, subNode.id);
                   }
                 }}
-                style={{ 
+                style={{
                   animationDelay: `${idx * 0.05}s`,
                   cursor: config.master_switch && isEnabled ? 'pointer' : 'default'
                 }}
               >
                 <div className="h-sub-node-dot">{subNode.enabled && isEnabled ? '●' : '○'}</div>
-                <div 
-                  className="h-sub-node-name" 
-                  title={subNode.name}  /* 鼠标悬停显示完整内容 */
+                <div
+                  className="h-sub-node-name"
+                  title={subNode.name}  /* Show full content on hover */
                 >
                   {subNode.name.length > 8 ? subNode.name.substring(0, 8) + '...' : subNode.name}
                 </div>
@@ -323,10 +323,10 @@ const DecisionFlowMatrix = () => {
 
   return (
     <div className="decision-flow-matrix horizontal">
-      {/* 动画画布 */}
+      {/* Animation canvas */}
       <canvas ref={canvasRef} className="flow-canvas-bg"></canvas>
 
-      {/* 顶部控制栏 */}
+      {/* Top control bar */}
       <div className="h-header">
         <div className="h-header-left">
           <div className="h-title">DECISION FLOW MATRIX</div>
@@ -354,14 +354,14 @@ const DecisionFlowMatrix = () => {
         </div>
       </div>
 
-      {/* 横向流程 */}
-      <div 
+      {/* Horizontal flow */}
+      <div
         className="h-flow-container"
         style={{
           transform: `scale(${zoom})`,
           transformOrigin: 'top left',
-          width: `${100 / zoom}%`,  /* 调整容器宽度以适应缩放 */
-          height: `${100 / zoom}%`  /* 调整容器高度以适应缩放 */
+          width: `${100 / zoom}%`,  /* Adjust container width to fit zoom */
+          height: `${100 / zoom}%`  /* Adjust container height to fit zoom */
         }}
       >
         {layers.map((layer, index) => (
@@ -378,27 +378,27 @@ const DecisionFlowMatrix = () => {
         ))}
       </div>
 
-      {/* 缩放控制按钮 */}
+      {/* Zoom control buttons */}
       <div className="h-zoom-controls">
-        <button 
+        <button
           className="h-zoom-btn"
           onClick={() => setZoom(Math.min(zoom + 0.1, 2.0))}
-          title="放大"
+          title="Zoom In"
         >
           +
         </button>
         <div className="h-zoom-level">{Math.round(zoom * 100)}%</div>
-        <button 
+        <button
           className="h-zoom-btn"
           onClick={() => setZoom(Math.max(zoom - 0.1, 0.5))}
-          title="缩小"
+          title="Zoom Out"
         >
           −
         </button>
-        <button 
+        <button
           className="h-zoom-btn h-zoom-reset"
           onClick={() => setZoom(1.0)}
-          title="重置缩放"
+          title="Reset Zoom"
         >
           ↺
         </button>

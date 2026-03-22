@@ -1,6 +1,6 @@
 """
-FastAPI 主应用
-提供REST API和WebSocket接口
+FastAPI main application
+Provides REST API and WebSocket endpoints
 """
 
 import asyncio
@@ -11,14 +11,14 @@ from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 
-# 加载.env文件
+# Load .env file
 load_dotenv('/home/ubuntu/auto-trading-agent/.env')
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# 导入核心模块
+# Import core modules
 import sys
 sys.path.insert(0, '/home/ubuntu/auto-trading-agent')
 
@@ -40,17 +40,17 @@ from backend.data.apify_scraper import ApifyScraper, ScraperMode, DataSource, ge
 logger = get_logger("api")
 
 
-# ==================== 全局状态 ====================
+# ==================== Global State ====================
 
 class TradingAgent:
-    """交易Agent主类"""
+    """Trading Agent main class"""
     
     def __init__(self):
         self.config = get_config()
         self.event_bus = get_event_bus()
         
-        # 初始化组件
-        # 使用OKX真实数据，如果失败则降级到模拟数据
+        # Initialize components
+        # Use OKX real data, fallback to mock data if failed
         try:
             self.data_provider = OKXDataProvider()
             self._use_real_data = True
@@ -68,91 +68,91 @@ class TradingAgent:
         self.executor = MockExecutor()
         self.backtest_engine = BacktestEngine()
         
-        # Apify 抓取器（用于 X/Twitter 数据抓取）
+        # Apify scraper (for X/Twitter data scraping)
         self.apify_scraper = get_scraper()
         self.apify_scraper.on_scrape_complete(self._on_scrape_complete)
         
-        # 状态
+        # Status
         self.is_running = False
         self.current_symbol = "BTC/USDT"
         self.last_ticker: Optional[Ticker] = None
         self.last_signal: Optional[Signal] = None
         
-        # WebSocket连接管理
+        # WebSocket connection management
         self.ws_connections: List[WebSocket] = []
     
     async def start(self):
-        """启动Agent"""
+        """StartAgent"""
         if self.is_running:
             return
         
         self.is_running = True
         logger.info("Trading Agent started")
         
-        # 启动数据订阅
+        # Start data subscription
         await self.data_provider.subscribe_ticker(
             self.current_symbol,
             self._on_ticker_update
         )
         
-        # 启动事件循环
+        # Start event loop
         asyncio.create_task(self._main_loop())
     
     async def stop(self):
-        """停止Agent"""
+        """StopAgent"""
         self.is_running = False
         await self.data_provider.unsubscribe_ticker(self.current_symbol)
         self.data_provider.stop()
         logger.info("Trading Agent stopped")
     
     async def _on_ticker_update(self, ticker: Ticker):
-        """处理行情更新"""
+        """Handle market data updates"""
         self.last_ticker = ticker
         
-        # 更新持仓盈亏
+        # UpdatePositionP&L
         self.order_manager.update_position_price(ticker.symbol, ticker.last_price)
         
-        # 广播到WebSocket
+        # Broadcast to WebSocket
         await self._broadcast({
             "type": "ticker",
             "data": ticker.model_dump()
         })
     
     async def _main_loop(self):
-        """主循环"""
+        """Main loop"""
         while self.is_running:
             try:
-                await asyncio.sleep(5)  # 每5秒执行一次
+                await asyncio.sleep(5)  # Execute every 5 seconds
                 
                 if not self.last_ticker:
                     continue
                 
-                # 获取K线数据
+                # GetCandlestick data
                 klines = await self.data_provider.get_klines(
                     self.current_symbol,
                     interval="1h",
                     limit=100
                 )
                 
-                # 生成策略信号
+                # Generate strategy signals
                 momentum_signal = await self.momentum_strategy.run(
                     self.current_symbol,
                     self.last_ticker,
                     klines
                 )
                 
-                # 信号融合
+                # Signal fusion
                 signals = [momentum_signal]
                 fused_signal = self.signal_fusion.fuse(signals)
                 self.last_signal = fused_signal
                 
-                # 广播信号
+                # Broadcast signals
                 await self._broadcast({
                     "type": "signal",
                     "data": fused_signal.model_dump()
                 })
                 
-                # 风控检查
+                # Risk controlCheck
                 if fused_signal.is_actionable:
                     positions = self.order_manager.get_all_positions()
                     orders = self.order_manager.get_active_orders()
@@ -165,17 +165,17 @@ class TradingAgent:
                     )
                     
                     if risk_result.passed:
-                        # 创建订单
+                        # CreateOrder
                         order = self.order_manager.create_order_from_signal(
                             fused_signal,
-                            size=100  # 固定下单金额
+                            size=100  # Fixed order amount
                         )
                         
                         if order:
-                            # 执行订单
+                            # ExecuteOrder
                             result = await self.executor.submit_order(order)
                             
-                            # 更新订单状态
+                            # UpdateOrder status
                             self.order_manager.update_order_status(
                                 order.id,
                                 result["status"],
@@ -185,7 +185,7 @@ class TradingAgent:
                                 error_msg=result.get("error", "")
                             )
                             
-                            # 广播订单更新
+                            # Broadcast order updates
                             await self._broadcast({
                                 "type": "order",
                                 "data": order.model_dump()
@@ -197,23 +197,23 @@ class TradingAgent:
                 logger.error(f"Main loop error: {e}")
     
     async def _on_scrape_complete(self, result):
-        """处理 Apify 抓取完成"""
+        """Handle Apify scrape completion"""
         logger.info(f"Apify scrape completed: {result.total_count} posts from {result.source}")
         
-        # 广播到 WebSocket
+        # Broadcast to WebSocket
         await self._broadcast({
             "type": "scrape_result",
             "data": result.to_dict()
         })
         
-        # 如果有帖子，进行情绪分析
+        # If posts available, perform sentiment analysis
         if result.posts:
             texts = [p.text for p in result.posts]
             sentiment = await self.sentiment_analyzer.analyze_batch(texts)
             logger.info(f"Sentiment analysis: {sentiment}")
     
     async def _broadcast(self, message: dict):
-        """广播消息到所有WebSocket连接"""
+        """Broadcast message to all WebSocket connections"""
         if not self.ws_connections:
             return
         
@@ -230,11 +230,11 @@ class TradingAgent:
             self.ws_connections.remove(ws)
 
 
-# 全局Agent实例
+# Global agent instance
 agent: Optional[TradingAgent] = None
 
 
-# ==================== 请求/响应模型 ====================
+# ==================== Request/ResponseModel ====================
 
 class StartRequest(BaseModel):
     symbol: str = "BTC/USDT"
@@ -259,11 +259,11 @@ class ConfigUpdateRequest(BaseModel):
     ai: Optional[Dict[str, Any]] = None
 
 
-# ==================== 应用生命周期 ====================
+# ==================== Application Lifecycle ====================
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期管理"""
+    """Application LifecycleManagement"""
     global agent
     agent = TradingAgent()
     logger.info("Application started")
@@ -274,15 +274,15 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    """创建FastAPI应用"""
+    """Create FastAPI application"""
     app = FastAPI(
         title="Auto Trading Agent API",
-        description="Web3 AI自动交易系统API",
+        description="Web3 AI Automated Trading System API",
         version="1.0.0",
         lifespan=lifespan
     )
     
-    # CORS配置
+    # CORSconfiguration
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -297,11 +297,11 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-# ==================== REST API 路由 ====================
+# ==================== REST API Route ====================
 
 @app.get("/")
 async def root():
-    """根路由"""
+    """RootRoute"""
     return {
         "name": "Auto Trading Agent",
         "version": "1.0.0",
@@ -311,7 +311,7 @@ async def root():
 
 @app.get("/api/status")
 async def get_status():
-    """获取系统状态"""
+    """Get system status"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -329,7 +329,7 @@ async def get_status():
 
 @app.post("/api/start")
 async def start_agent(request: StartRequest):
-    """启动Agent"""
+    """StartAgent"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -341,7 +341,7 @@ async def start_agent(request: StartRequest):
 
 @app.post("/api/stop")
 async def stop_agent():
-    """停止Agent"""
+    """StopAgent"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -352,7 +352,7 @@ async def stop_agent():
 
 @app.get("/api/ticker/{symbol}")
 async def get_ticker(symbol: str):
-    """获取行情"""
+    """Get market data"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -366,7 +366,7 @@ async def get_klines(
     interval: str = "1h",
     limit: int = 100
 ):
-    """获取K线数据"""
+    """GetCandlestick data"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -380,17 +380,17 @@ async def get_klines(
 
 @app.get("/api/signal/{symbol}")
 async def get_signal(symbol: str):
-    """获取交易信号"""
+    """GetTrading signal"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
     symbol = symbol.replace("-", "/")
     
-    # 获取数据
+    # Get data
     ticker = await agent.data_provider.get_ticker(symbol)
     klines = await agent.data_provider.get_klines(symbol, interval="1h", limit=100)
     
-    # 生成信号
+    # Generate signals
     signal = await agent.momentum_strategy.run(symbol, ticker, klines)
     
     return SignalResponse(signal=signal, ticker=ticker).model_dump()
@@ -398,7 +398,7 @@ async def get_signal(symbol: str):
 
 @app.get("/api/positions")
 async def get_positions():
-    """获取持仓"""
+    """GetPosition"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -407,7 +407,7 @@ async def get_positions():
 
 @app.get("/api/orders")
 async def get_orders():
-    """获取订单"""
+    """GetOrder"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -416,7 +416,7 @@ async def get_orders():
 
 @app.get("/api/risk")
 async def get_risk_status():
-    """获取风控状态"""
+    """GetRisk controlStatus"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -428,7 +428,7 @@ async def get_risk_status():
 
 @app.post("/api/risk/reset")
 async def reset_risk():
-    """重置风控状态"""
+    """Reset Risk ControlsStatus"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -440,7 +440,7 @@ async def reset_risk():
 
 @app.get("/api/sentiment/{symbol}")
 async def get_sentiment(symbol: str):
-    """获取情绪分析"""
+    """GetSentimentAnalysis"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -455,31 +455,31 @@ async def get_sentiment(symbol: str):
 
 @app.post("/api/backtest")
 async def run_backtest(request: BacktestRequest):
-    """运行回测"""
+    """RunningBacktest"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
-    # 获取历史数据
+    # Get historical data
     klines = await agent.data_provider.get_klines(
         request.symbol,
         interval="1h",
         limit=request.bars
     )
     
-    # 创建策略
+    # CreateStrategy
     if request.strategy == "momentum":
         strategy = MomentumStrategy()
     else:
         strategy = MomentumStrategy()
     
-    # 创建回测引擎
+    # CreateBacktest engine
     backtest = BacktestEngine(
         initial_balance=request.initial_balance,
         fee_rate=0.001,
         slippage=0.0005
     )
     
-    # 运行回测
+    # RunningBacktest
     result = await backtest.run(
         request.symbol,
         strategy,
@@ -492,14 +492,14 @@ async def run_backtest(request: BacktestRequest):
 
 @app.get("/api/config")
 async def get_config_api():
-    """获取配置"""
+    """Getconfiguration"""
     config = get_config()
     return config.model_dump()
 
 
 @app.put("/api/config")
 async def update_config(request: ConfigUpdateRequest):
-    """更新配置"""
+    """Update configuration"""
     config = get_config()
     
     if request.trading:
@@ -522,10 +522,10 @@ async def update_config(request: ConfigUpdateRequest):
     return {"status": "updated", "config": config.model_dump()}
 
 
-# ==================== Apify 抓取 API ====================
+# ==================== Apify Scrape API ====================
 
 class ScraperModeRequest(BaseModel):
-    mode: str = "manual"  # "manual" 或 "auto"
+    mode: str = "manual"  # "manual" or "auto"
 
 
 class ScraperConfigRequest(BaseModel):
@@ -533,12 +533,12 @@ class ScraperConfigRequest(BaseModel):
     subreddits: Optional[List[str]] = None
     max_items: Optional[int] = None
     api_token: Optional[str] = None
-    data_source: Optional[str] = None  # "twitter" 或 "reddit"
+    data_source: Optional[str] = None  # "twitter" or "reddit"
 
 
 @app.get("/api/scraper/status")
 async def get_scraper_status():
-    """获取抓取器状态"""
+    """Get scraper status"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -547,7 +547,7 @@ async def get_scraper_status():
 
 @app.post("/api/scraper/scrape")
 async def trigger_scrape():
-    """手动触发一次抓取"""
+    """Manually trigger a scrape"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -557,7 +557,7 @@ async def trigger_scrape():
 
 @app.post("/api/scraper/scrape/reddit")
 async def trigger_reddit_scrape():
-    """手动触发 Reddit 抓取"""
+    """ManualTrigger Reddit Scrape"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -567,7 +567,7 @@ async def trigger_reddit_scrape():
 
 @app.post("/api/scraper/scrape/twitter")
 async def trigger_twitter_scrape():
-    """手动触发 Twitter 抓取"""
+    """ManualTrigger Twitter Scrape"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -577,7 +577,7 @@ async def trigger_twitter_scrape():
 
 @app.post("/api/scraper/mode")
 async def set_scraper_mode(request: ScraperModeRequest):
-    """设置抓取模式（手动/自动）"""
+    """Set scraper mode(Manual/Auto)"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -592,7 +592,7 @@ async def set_scraper_mode(request: ScraperModeRequest):
 
 @app.post("/api/scraper/config")
 async def update_scraper_config(request: ScraperConfigRequest):
-    """更新抓取器配置"""
+    """Update scraper configuration"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -625,7 +625,7 @@ async def update_scraper_config(request: ScraperConfigRequest):
 
 @app.get("/api/scraper/last-result")
 async def get_last_scrape_result():
-    """获取最近一次抓取结果"""
+    """Get last scrape result"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -639,7 +639,7 @@ async def get_last_scrape_result():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket连接"""
+    """WebSocket connection"""
     await websocket.accept()
     
     if agent:
@@ -650,7 +650,7 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             message = json.loads(data)
             
-            # 处理客户端消息
+            # Process client messages
             if message.get("type") == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
             
@@ -672,20 +672,20 @@ async def websocket_endpoint(websocket: WebSocket):
             agent.ws_connections.remove(websocket)
 
 
-# ==================== 启动入口 ====================
+# ==================== Entry Point ====================
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-# ==================== 新闻抓取 API ====================
+# ==================== NewsScrape API ====================
 
 @app.get("/api/news/latest")
 async def get_latest_news(
-    symbol: Optional[str] = Query(None, description="币种符号，如BTC"),
-    limit: int = Query(10, ge=1, le=50, description="返回新闻数量")
+    symbol: Optional[str] = Query(None, description="Trading symbol, e.g. BTC"),
+    limit: int = Query(10, ge=1, le=50, description="ReturnNewsQuantity")
 ):
-    """获取最新财经新闻"""
+    """Get latest financial news"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -693,19 +693,19 @@ async def get_latest_news(
         from backend.data.news_scraper import NewsScraper
         from backend.ai.news_analyzer import NewsAnalyzer
         
-        # 创建新闻抓取器
+        # CreateNews scraper
         scraper = NewsScraper()
         
-        # 抓取新闻
+        # ScrapeNews
         articles = await scraper.scrape_all(symbol=symbol)
         
-        # 关闭客户端
+        # Close client
         await scraper.close()
         
-        # 限制返回数量
+        # LimitReturnQuantity
         articles = articles[:limit]
         
-        # 转换为字典
+        # Convert to dictionary
         news_list = [
             {
                 "title": article.title,
@@ -730,11 +730,11 @@ async def get_latest_news(
 
 @app.get("/api/news/analyzed")
 async def get_analyzed_news(
-    symbol: Optional[str] = Query(None, description="币种符号，如BTC"),
-    min_stars: int = Query(3, ge=1, le=5, description="最低星级过滤"),
-    limit: int = Query(10, ge=1, le=50, description="返回新闻数量")
+    symbol: Optional[str] = Query(None, description="Trading symbol, e.g. BTC"),
+    min_stars: int = Query(3, ge=1, le=5, description="Minimum star rating filter"),
+    limit: int = Query(10, ge=1, le=50, description="ReturnNewsQuantity")
 ):
-    """获取AI分析后的财经新闻"""
+    """Get AI-analyzed financial news"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -742,19 +742,19 @@ async def get_analyzed_news(
         from backend.data.news_scraper import NewsScraper
         from backend.ai.news_analyzer import NewsAnalyzer
         
-        # 创建新闻抓取器和分析器
+        # Create news scraper and analyzer
         scraper = NewsScraper()
         analyzer = NewsAnalyzer()
         
-        # 抓取新闻
+        # ScrapeNews
         articles = await scraper.scrape_all(symbol=symbol)
         
-        # 关闭抓取器客户端
+        # Close scraperClient
         await scraper.close()
         
-        # AI分析新闻
+        # AIAnalysisNews
         analyzed_news = []
-        for article in articles[:limit * 2]:  # 多抓取一些，过滤后可能不够
+        for article in articles[:limit * 2]:  # Scrape extra, may not be enough after filtering
             try:
                 impact = await analyzer.analyze_news(
                     title=article.title,
@@ -762,7 +762,7 @@ async def get_analyzed_news(
                     symbol=symbol
                 )
                 
-                # 过滤低星级新闻
+                # Filter low-star news
                 if impact.importance_stars >= min_stars:
                     analyzed_news.append({
                         "title": article.title,
@@ -780,7 +780,7 @@ async def get_analyzed_news(
                         "reasoning": impact.reasoning
                     })
                 
-                # 达到数量限制就停止
+                # Stop when quantity limit reached
                 if len(analyzed_news) >= limit:
                     break
             
@@ -800,11 +800,11 @@ async def get_analyzed_news(
 
 @app.post("/api/news/analyze")
 async def analyze_single_news(
-    title: str = Query(..., description="新闻标题"),
-    content: Optional[str] = Query(None, description="新闻内容"),
-    symbol: Optional[str] = Query(None, description="币种符号")
+    title: str = Query(..., description="News title"),
+    content: Optional[str] = Query(None, description="News content"),
+    symbol: Optional[str] = Query(None, description="Trading symbol")
 ):
-    """分析单条新闻"""
+    """Analyze a single news item"""
     if not agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     
@@ -836,32 +836,32 @@ async def analyze_single_news(
 
 
 
-# ==================== 多Agent协作系统 API ====================
+# ==================== Multi-Agent collaboration system API ====================
 
 @app.get("/api/multi-agent/deliberate")
 async def multi_agent_deliberate(
-    symbol: str = Query("BTC/USDT", description="交易对")
+    symbol: str = Query("BTC/USDT", description="Trading pair")
 ):
     """
-    AI委员会讨论并做出决策
+    AI committee deliberates and makes decision
     
-    这是黑客松的核心创新功能！
+    This is the core hackathon innovation!
     """
     try:
-        # 准备上下文
+        # Prepare context
         ticker = await agent.data_provider.get_ticker(symbol)
         klines = await agent.data_provider.get_klines(symbol, "1h", limit=100)
         
-        # 获取新闻影响
+        # Get news impact
         from backend.data.news_scraper import NewsScraper
         news_scraper = NewsScraper()
         news_list = await news_scraper.scrape_all()
         
-        # 分析新闻
+        # AnalysisNews
         from backend.ai.news_analyzer import NewsAnalyzer
         news_analyzer = NewsAnalyzer()
         analyzed_news = []
-        for news in news_list[:5]:  # 只分析前5条
+        for news in news_list[:5]:  # Only analyze the top 5
             impact = await news_analyzer.analyze_news(
                 news.title,
                 news.content,
@@ -877,7 +877,7 @@ async def multi_agent_deliberate(
             "news_impacts": analyzed_news
         }
         
-        # AI委员会讨论
+        # AI committee discussion
         from backend.ai.multi_agent_system import MultiAgentSystem
         from backend.data.whale_tracker import get_whale_tracker
         
@@ -901,7 +901,7 @@ async def multi_agent_deliberate(
 
 @app.get("/api/multi-agent/status")
 async def multi_agent_status():
-    """获取多Agent系统状态"""
+    """GetMulti-Agent systemStatus"""
     try:
         return {
             "success": True,
@@ -909,31 +909,31 @@ async def multi_agent_status():
                 "agents": [
                     {
                         "role": "news_analyst",
-                        "name": "📰 新闻分析师",
+                        "name": "📰 News Analyst",
                         "status": "active",
                         "weight": 1.0
                     },
                     {
                         "role": "technical_analyst",
-                        "name": "📊 技术分析师",
+                        "name": "📊 Technical Analyst",
                         "status": "active",
                         "weight": 1.0
                     },
                     {
                         "role": "onchain_analyst",
-                        "name": "🔗 链上分析师",
+                        "name": "🔗 On-chain Analyst",
                         "status": "active",
                         "weight": 1.0
                     },
                     {
                         "role": "risk_manager",
-                        "name": "🛡️ 风控专家",
+                        "name": "🛡️ Risk Control Expert",
                         "status": "active",
                         "weight": 1.0
                     },
                     {
                         "role": "decision_maker",
-                        "name": "🎯 决策者",
+                        "name": "🎯 Decision Maker",
                         "status": "active",
                         "weight": 1.0
                     }
@@ -947,16 +947,16 @@ async def multi_agent_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==================== 鲸鱼追踪 API ====================
+# ==================== Whale Tracker API ====================
 
 @app.get("/api/whale/analysis")
 async def whale_analysis(
-    symbol: str = Query("BTC/USDT", description="交易对")
+    symbol: str = Query("BTC/USDT", description="Trading pair")
 ):
     """
-    获取链上大户行为分析
+    Get on-chain whale behavior analysis
     
-    这是黑客松的第二个核心创新功能！
+    This is the second core hackathon innovation!
     """
     try:
         from backend.data.whale_tracker import get_whale_tracker
@@ -982,9 +982,9 @@ async def whale_analysis(
 
 @app.get("/api/whale/alerts")
 async def whale_alerts(
-    symbol: str = Query("BTC/USDT", description="交易对")
+    symbol: str = Query("BTC/USDT", description="Trading pair")
 ):
-    """获取大户警报"""
+    """Get whale alerts"""
     try:
         from backend.data.whale_tracker import get_whale_tracker
         
@@ -1003,10 +1003,10 @@ async def whale_alerts(
 
 @app.get("/api/whale/top-positions")
 async def whale_top_positions(
-    symbol: str = Query("BTC/USDT", description="交易对"),
-    limit: int = Query(10, description="返回数量")
+    symbol: str = Query("BTC/USDT", description="Trading pair"),
+    limit: int = Query(10, description="ReturnQuantity")
 ):
-    """获取前N大户持仓"""
+    """Get top N whale positions"""
     try:
         from backend.data.whale_tracker import get_whale_tracker
         
@@ -1031,28 +1031,28 @@ async def whale_top_positions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==================== 集成决策 API ====================
+# ==================== Integrated Decision API ====================
 
 @app.get("/api/integrated-decision")
 async def integrated_decision(
-    symbol: str = Query("BTC/USDT", description="交易对")
+    symbol: str = Query("BTC/USDT", description="Trading pair")
 ):
     """
-    集成决策：多Agent + 鲸鱼追踪 + AI分析
+    Integrated Decision: Multi-Agent + Whale Tracker + AI Analysis
     
-    这是完整的决策流程展示！
+    This demonstrates the complete decision flow!
     """
     try:
-        # 1. 获取市场数据
+        # 1. Get market data
         ticker = await agent.data_provider.get_ticker(symbol)
         klines = await agent.data_provider.get_klines(symbol, "1h", limit=100)
         
-        # 2. 获取新闻
+        # 2. Get news
         from backend.data.news_scraper import NewsScraper
         news_scraper = NewsScraper()
         news_list = await news_scraper.scrape_all()
         
-        # 3. 分析新闻
+        # 3. Analyze news
         from backend.ai.news_analyzer import NewsAnalyzer
         news_analyzer = NewsAnalyzer()
         analyzed_news = []
@@ -1065,13 +1065,13 @@ async def integrated_decision(
             if impact and impact.importance_stars >= 3:
                 analyzed_news.append(impact.dict())
         
-        # 4. 鲸鱼追踪
+        # 4. Whale Tracker
         from backend.data.whale_tracker import get_whale_tracker
         whale_tracker = get_whale_tracker()
         whale_analysis = await whale_tracker.analyze_whale_behavior(symbol)
         whale_alerts = await whale_tracker.get_whale_alerts(symbol)
         
-        # 5. 多Agent讨论
+        # 5. Multi-agent discussion
         from backend.ai.multi_agent_system import MultiAgentSystem
         multi_agent = MultiAgentSystem(
             news_analyzer=news_analyzer,
@@ -1088,7 +1088,7 @@ async def integrated_decision(
         
         consensus = await multi_agent.deliberate(context)
         
-        # 6. 返回完整决策
+        # 6. Return complete decision
         return {
             "success": True,
             "data": {
@@ -1118,22 +1118,22 @@ async def integrated_decision(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==================== Vibe策略管理 API ====================
+# ==================== VibeStrategyManagement API ====================
 
 from backend.strategy.vibe_strategy import get_vibe_manager, VibeRule
 
 class VibeRuleRequest(BaseModel):
-    """Vibe规则请求模型"""
-    content: str = Field(..., description="规则内容")
+    """VibeRuleRequestModel"""
+    content: str = Field(..., description="Rule content")
 
 class VibeRuleUpdateRequest(BaseModel):
-    """Vibe规则更新请求模型"""
-    content: Optional[str] = Field(None, description="规则内容")
-    enabled: Optional[bool] = Field(None, description="是否启用")
+    """Vibe rule update request model"""
+    content: Optional[str] = Field(None, description="Rule content")
+    enabled: Optional[bool] = Field(None, description="Whether to enable")
 
 @app.get("/api/vibe/rules")
-async def get_vibe_rules(enabled_only: bool = Query(False, description="是否只返回启用的规则")):
-    """获取所有Vibe规则"""
+async def get_vibe_rules(enabled_only: bool = Query(False, description="Whether to return only enabled rules")):
+    """Get all vibe rules"""
     try:
         vibe_manager = get_vibe_manager()
         rules = vibe_manager.get_all_rules(enabled_only=enabled_only)
@@ -1148,14 +1148,14 @@ async def get_vibe_rules(enabled_only: bool = Query(False, description="是否�
 
 @app.post("/api/vibe/rules")
 async def add_vibe_rule(request: VibeRuleRequest):
-    """添加新的Vibe规则"""
+    """Add a new vibe rule"""
     try:
         vibe_manager = get_vibe_manager()
         rule = vibe_manager.add_rule(request.content)
         return {
             "success": True,
             "rule": rule.to_dict(),
-            "message": "规则添加成功"
+            "message": "RuleAddSuccess"
         }
     except Exception as e:
         logger.error(f"Add vibe rule error: {e}", exc_info=True)
@@ -1163,7 +1163,7 @@ async def add_vibe_rule(request: VibeRuleRequest):
 
 @app.put("/api/vibe/rules/{rule_id}")
 async def update_vibe_rule(rule_id: str, request: VibeRuleUpdateRequest):
-    """更新Vibe规则"""
+    """Update vibe rule"""
     try:
         vibe_manager = get_vibe_manager()
         rule = vibe_manager.update_rule(
@@ -1173,12 +1173,12 @@ async def update_vibe_rule(rule_id: str, request: VibeRuleUpdateRequest):
         )
         
         if rule is None:
-            raise HTTPException(status_code=404, detail="规则不存在")
+            raise HTTPException(status_code=404, detail="Rule not found")
         
         return {
             "success": True,
             "rule": rule.to_dict(),
-            "message": "规则更新成功"
+            "message": "Rule updated successfully"
         }
     except HTTPException:
         raise
@@ -1188,17 +1188,17 @@ async def update_vibe_rule(rule_id: str, request: VibeRuleUpdateRequest):
 
 @app.delete("/api/vibe/rules/{rule_id}")
 async def delete_vibe_rule(rule_id: str):
-    """删除Vibe规则"""
+    """DeleteVibeRule"""
     try:
         vibe_manager = get_vibe_manager()
         success = vibe_manager.delete_rule(rule_id)
         
         if not success:
-            raise HTTPException(status_code=404, detail="规则不存在")
+            raise HTTPException(status_code=404, detail="Rule not found")
         
         return {
             "success": True,
-            "message": "规则删除成功"
+            "message": "RuleDeleteSuccess"
         }
     except HTTPException:
         raise
@@ -1208,7 +1208,7 @@ async def delete_vibe_rule(rule_id: str):
 
 @app.get("/api/vibe/prompt")
 async def get_vibe_prompt():
-    """获取Vibe规则的Prompt格式（用于AI）"""
+    """Get vibe rules in prompt format (for AI)"""
     try:
         vibe_manager = get_vibe_manager()
         prompt = vibe_manager.get_rules_as_prompt()
@@ -1227,13 +1227,13 @@ async def get_vibe_prompt():
 from backend.strategy.decision_flow import get_decision_flow_manager
 
 class DecisionFlowUpdateRequest(BaseModel):
-    """决策流更新请求"""
+    """Decision flow update request"""
     master_switch: Optional[bool] = None
     nodes: Optional[Dict[str, dict]] = None
 
 @app.get("/api/decision-flow/config")
 async def get_decision_flow_config():
-    """获取决策流配置"""
+    """Get decision flow configuration"""
     try:
         manager = get_decision_flow_manager()
         config = manager.get_config()
@@ -1247,7 +1247,7 @@ async def get_decision_flow_config():
 
 @app.post("/api/decision-flow/config")
 async def update_decision_flow_config(request: DecisionFlowUpdateRequest):
-    """更新决策流配置"""
+    """Update decision flow configuration"""
     try:
         manager = get_decision_flow_manager()
         config = manager.update_config(
@@ -1257,7 +1257,7 @@ async def update_decision_flow_config(request: DecisionFlowUpdateRequest):
         return {
             "success": True,
             "config": config,
-            "message": "配置已更新"
+            "message": "Configuration updated"
         }
     except Exception as e:
         logger.error(f"Update decision flow config error: {e}", exc_info=True)
@@ -1265,7 +1265,7 @@ async def update_decision_flow_config(request: DecisionFlowUpdateRequest):
 
 @app.post("/api/decision-flow/toggle/{node_id}")
 async def toggle_decision_flow_node(node_id: str):
-    """切换节点启用状态"""
+    """ToggleNodeEnabledStatus"""
     try:
         manager = get_decision_flow_manager()
         result = manager.toggle_node(node_id)
@@ -1276,14 +1276,14 @@ async def toggle_decision_flow_node(node_id: str):
 
 @app.post("/api/decision-flow/reset")
 async def reset_decision_flow_config():
-    """重置为默认配置"""
+    """Reset to default configuration"""
     try:
         manager = get_decision_flow_manager()
         config = manager.reset_to_default()
         return {
             "success": True,
             "config": config,
-            "message": "已重置为默认配置"
+            "message": "Reset to default configuration"
         }
     except Exception as e:
         logger.error(f"Reset decision flow config error: {e}", exc_info=True)
@@ -1291,7 +1291,7 @@ async def reset_decision_flow_config():
 
 @app.get("/api/decision-flow/enabled-nodes")
 async def get_enabled_nodes():
-    """获取所有启用的节点"""
+    """Get all enabled nodes"""
     try:
         manager = get_decision_flow_manager()
         enabled_nodes = manager.get_enabled_nodes()
@@ -1306,7 +1306,7 @@ async def get_enabled_nodes():
 
 @app.post("/api/decision-flow/toggle/{node_id}/{sub_node_id}")
 async def toggle_decision_flow_sub_node(node_id: str, sub_node_id: str):
-    """切换子节点启用状态"""
+    """Toggle sub-node enabled status"""
     try:
         manager = get_decision_flow_manager()
         result = manager.toggle_sub_node(node_id, sub_node_id)
@@ -1317,13 +1317,13 @@ async def toggle_decision_flow_sub_node(node_id: str, sub_node_id: str):
 
 @app.post("/api/decision-flow/sync-vibe-rules")
 async def sync_vibe_rules_to_decision_flow():
-    """同步Vibe规则到决策流"""
+    """Sync vibe rules to decision flow"""
     try:
         from backend.strategy.vibe_strategy import get_vibe_manager
         vibe_manager = get_vibe_manager()
         rules = vibe_manager.get_all_rules()
         
-        # 转换VibeRule对象为字典
+        # Convert vibe rule objects to dictionaries
         rules_dict = [rule.to_dict() for rule in rules]
         
         decision_manager = get_decision_flow_manager()
@@ -1331,7 +1331,7 @@ async def sync_vibe_rules_to_decision_flow():
         
         return {
             "success": True,
-            "message": f"已同步 {len(rules)} 条Vibe规则",
+            "message": f"Synced {len(rules)} vibe rules",
             "rules_count": len(rules)
         }
     except Exception as e:

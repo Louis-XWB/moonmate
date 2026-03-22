@@ -1,6 +1,6 @@
 """
-币安永续合约交易执行器
-支持USDT本位永续合约交易
+Binance perpetual futures trading executor
+Supports USDT-margined perpetual futures trading
 """
 
 import asyncio
@@ -20,28 +20,28 @@ logger = get_logger("binance_futures")
 
 
 class PositionSide(str, Enum):
-    """持仓方向"""
+    """Position side"""
     LONG = "LONG"
     SHORT = "SHORT"
     BOTH = "BOTH"
 
 
 class MarginType(str, Enum):
-    """保证金类型"""
-    ISOLATED = "ISOLATED"  # 逐仓
-    CROSSED = "CROSSED"    # 全仓
+    """Margin type"""
+    ISOLATED = "ISOLATED"  # Isolated margin
+    CROSSED = "CROSSED"    # Cross margin
 
 
 class BinanceFuturesExecutor:
     """
-    币安永续合约执行器
+    Binance perpetual futures executor
     
-    功能：
-    - 下单/撤单/查询订单
-    - 仓位管理
-    - 杠杆设置
-    - 保证金模式切换
-    - 风险管理
+    Features:
+    - Place/cancel/query orders
+    - Position management
+    - Leverage configuration
+    - Margin mode switching
+    - Risk management
     """
     
     def __init__(
@@ -53,14 +53,14 @@ class BinanceFuturesExecutor:
         margin_type: MarginType = MarginType.ISOLATED
     ):
         """
-        初始化币安永续合约执行器
+        Initialize the Binance perpetual futures executor
         
         Args:
-            api_key: API密钥
-            api_secret: API密钥
-            testnet: 是否使用测试网
-            default_leverage: 默认杠杆倍数
-            margin_type: 保证金模式
+            api_key: API key
+            api_secret: API secret
+            testnet: Whether to use testnet
+            default_leverage: Default leverage multiplier
+            margin_type: Margin mode
         """
         self.api_key = api_key
         self.api_secret = api_secret
@@ -68,17 +68,17 @@ class BinanceFuturesExecutor:
         self.default_leverage = default_leverage
         self.margin_type = margin_type
         
-        # 初始化客户端
+        # Initialize client
         if testnet:
-            # 测试网
+            # Testnet
             self.client = Client(api_key, api_secret, testnet=True)
             self.base_url = "https://testnet.binancefuture.com"
         else:
-            # 主网
+            # Mainnet
             self.client = Client(api_key, api_secret)
             self.base_url = "https://fapi.binance.com"
         
-        # 使用CCXT作为备用客户端
+        # Use CCXT as fallback client
         self.ccxt_client = ccxt.binance({
             'apiKey': api_key,
             'secret': api_secret,
@@ -89,31 +89,31 @@ class BinanceFuturesExecutor:
             }
         })
         
-        # 缓存
+        # Cache
         self._positions: Dict[str, Position] = {}
         self._orders: Dict[str, Order] = {}
         
         logger.info(f"Binance Futures Executor initialized (testnet={testnet})")
     
     async def initialize(self):
-        """初始化：设置杠杆和保证金模式"""
+        """Initialize: set leverage and margin mode"""
         try:
-            # 获取所有交易对
+            # Get all trading pairs
             exchange_info = self.client.futures_exchange_info()
             symbols = [s['symbol'] for s in exchange_info['symbols']]
             
             logger.info(f"Found {len(symbols)} futures symbols")
             
-            # 为常用交易对设置杠杆和保证金模式
+            # Set leverage and margin mode for common trading pairs
             common_symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT']
             
             for symbol in common_symbols:
                 if symbol in symbols:
                     try:
-                        # 设置杠杆
+                        # Set leverage
                         await self.set_leverage(symbol, self.default_leverage)
                         
-                        # 设置保证金模式
+                        # Set margin mode
                         await self.set_margin_type(symbol, self.margin_type)
                         
                         logger.info(f"Initialized {symbol}: leverage={self.default_leverage}, margin={self.margin_type.value}")
@@ -128,14 +128,14 @@ class BinanceFuturesExecutor:
     
     async def set_leverage(self, symbol: str, leverage: int) -> bool:
         """
-        设置杠杆倍数
+        Set leverage multiplier
         
         Args:
-            symbol: 交易对（如BTCUSDT）
-            leverage: 杠杆倍数（1-125）
+            symbol: Trading pair (e.g. BTCUSDT)
+            leverage: Leverage multiplier (1-125)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             result = self.client.futures_change_leverage(
@@ -145,7 +145,7 @@ class BinanceFuturesExecutor:
             logger.info(f"Set leverage for {symbol}: {leverage}x")
             return True
         except BinanceAPIException as e:
-            if e.code == -4028:  # 杠杆已经设置
+            if e.code == -4028:  # Leverage already set
                 logger.debug(f"Leverage already set for {symbol}")
                 return True
             logger.error(f"Failed to set leverage for {symbol}: {e}")
@@ -153,14 +153,14 @@ class BinanceFuturesExecutor:
     
     async def set_margin_type(self, symbol: str, margin_type: MarginType) -> bool:
         """
-        设置保证金模式
+        Set margin mode
         
         Args:
-            symbol: 交易对
-            margin_type: 保证金类型（逐仓/全仓）
+            symbol: Trading pair
+            margin_type: Margin type (isolated/cross)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             result = self.client.futures_change_margin_type(
@@ -170,7 +170,7 @@ class BinanceFuturesExecutor:
             logger.info(f"Set margin type for {symbol}: {margin_type.value}")
             return True
         except BinanceAPIException as e:
-            if e.code == -4046:  # 保证金模式已经设置
+            if e.code == -4046:  # Margin mode already set
                 logger.debug(f"Margin type already set for {symbol}")
                 return True
             logger.error(f"Failed to set margin type for {symbol}: {e}")
@@ -187,22 +187,22 @@ class BinanceFuturesExecutor:
         time_in_force: str = "GTC"
     ) -> Optional[Order]:
         """
-        下单
+        Place an order
         
         Args:
-            symbol: 交易对
-            side: 买卖方向
-            order_type: 订单类型
-            quantity: 数量
-            price: 价格（限价单需要）
-            reduce_only: 是否只减仓
-            time_in_force: 有效期类型
+            symbol: Trading pair
+            side: Buy/sell direction
+            order_type: Order type
+            quantity: Quantity
+            price: Price (required for limit orders)
+            reduce_only: Whether reduce-only
+            time_in_force: Time-in-force type
         
         Returns:
-            订单对象
+            Order object
         """
         try:
-            # 构造订单参数
+            # Build order parameters
             params = {
                 'symbol': symbol.replace('/', ''),  # BTCUSDT
                 'side': side.value.upper(),
@@ -211,17 +211,17 @@ class BinanceFuturesExecutor:
                 'reduceOnly': reduce_only,
             }
             
-            # 限价单需要价格
+            # Limit orders require a price
             if order_type == OrderType.LIMIT:
                 if price is None:
                     raise ValueError("Limit order requires price")
                 params['price'] = price
                 params['timeInForce'] = time_in_force
             
-            # 下单
+            # Place order
             result = self.client.futures_create_order(**params)
             
-            # 转换为Order对象
+            # Convert to Order object
             order = self._convert_to_order(result)
             self._orders[order.order_id] = order
             
@@ -238,14 +238,14 @@ class BinanceFuturesExecutor:
     
     async def cancel_order(self, symbol: str, order_id: str) -> bool:
         """
-        撤单
+        Cancel an order
         
         Args:
-            symbol: 交易对
-            order_id: 订单ID
+            symbol: Trading pair
+            order_id: Order ID
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             result = self.client.futures_cancel_order(
@@ -255,7 +255,7 @@ class BinanceFuturesExecutor:
             
             logger.info(f"Order cancelled: {order_id}")
             
-            # 更新订单状态
+            # Update order status
             if order_id in self._orders:
                 self._orders[order_id].status = OrderStatus.CANCELLED
             
@@ -267,14 +267,14 @@ class BinanceFuturesExecutor:
     
     async def get_order(self, symbol: str, order_id: str) -> Optional[Order]:
         """
-        查询订单
+        Query an order
         
         Args:
-            symbol: 交易对
-            order_id: 订单ID
+            symbol: Trading pair
+            order_id: Order ID
         
         Returns:
-            订单对象
+            Order object
         """
         try:
             result = self.client.futures_get_order(
@@ -293,13 +293,13 @@ class BinanceFuturesExecutor:
     
     async def get_position(self, symbol: str) -> Optional[Position]:
         """
-        获取持仓
+        Get position
         
         Args:
-            symbol: 交易对
+            symbol: Trading pair
         
         Returns:
-            持仓对象
+            Position object
         """
         try:
             positions = self.client.futures_position_information(
@@ -312,7 +312,7 @@ class BinanceFuturesExecutor:
                     self._positions[symbol] = position
                     return position
             
-            # 没有持仓
+            # No position
             return None
             
         except BinanceAPIException as e:
@@ -321,10 +321,10 @@ class BinanceFuturesExecutor:
     
     async def get_all_positions(self) -> List[Position]:
         """
-        获取所有持仓
+        Get all positions
         
         Returns:
-            持仓列表
+            List of positions
         """
         try:
             positions_data = self.client.futures_position_information()
@@ -348,28 +348,28 @@ class BinanceFuturesExecutor:
         position_side: Optional[PositionSide] = None
     ) -> bool:
         """
-        平仓
+        Close a position
         
         Args:
-            symbol: 交易对
-            position_side: 持仓方向（单向持仓模式不需要）
+            symbol: Trading pair
+            position_side: Position side (not needed in one-way position mode)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 获取当前持仓
+            # Get current position
             position = await self.get_position(symbol)
             
             if not position or position.quantity == 0:
                 logger.warning(f"No position to close for {symbol}")
                 return False
             
-            # 确定平仓方向和数量
+            # Determine close direction and quantity
             quantity = abs(position.quantity)
             side = OrderSide.SELL if position.quantity > 0 else OrderSide.BUY
             
-            # 市价平仓
+            # Market close
             order = await self.place_order(
                 symbol=symbol,
                 side=side,
@@ -390,10 +390,10 @@ class BinanceFuturesExecutor:
     
     async def get_account_balance(self) -> Dict[str, Any]:
         """
-        获取账户余额
+        Get account balance
         
         Returns:
-            余额信息
+            Balance information
         """
         try:
             account = self.client.futures_account()
@@ -423,7 +423,7 @@ class BinanceFuturesExecutor:
             return {}
     
     def _convert_order_type(self, order_type: OrderType) -> str:
-        """转换订单类型"""
+        """Convert order type"""
         mapping = {
             OrderType.MARKET: 'MARKET',
             OrderType.LIMIT: 'LIMIT',
@@ -431,7 +431,7 @@ class BinanceFuturesExecutor:
         return mapping.get(order_type, 'MARKET')
     
     def _convert_to_order(self, data: Dict) -> Order:
-        """转换币安订单数据为Order对象"""
+        """Convert Binance order data to Order object"""
         return Order(
             order_id=str(data['orderId']),
             symbol=data['symbol'],
@@ -447,7 +447,7 @@ class BinanceFuturesExecutor:
         )
     
     def _convert_order_status(self, status: str) -> OrderStatus:
-        """转换订单状态"""
+        """Convert order status"""
         mapping = {
             'NEW': OrderStatus.PENDING,
             'PARTIALLY_FILLED': OrderStatus.PARTIAL,
@@ -459,7 +459,7 @@ class BinanceFuturesExecutor:
         return mapping.get(status, OrderStatus.PENDING)
     
     def _convert_to_position(self, data: Dict) -> Position:
-        """转换币安持仓数据为Position对象"""
+        """Convert Binance position data to Position object"""
         quantity = float(data['positionAmt'])
         entry_price = float(data['entryPrice'])
         
@@ -476,15 +476,15 @@ class BinanceFuturesExecutor:
         )
     
     async def close(self):
-        """关闭客户端"""
+        """Close the client"""
         await self.ccxt_client.close()
         logger.info("Binance Futures Executor closed")
 
 
-# ==================== 辅助函数 ====================
+# ==================== Helper functions ====================
 
 async def test_binance_futures():
-    """测试币安永续合约功能"""
+    """Test Binance perpetual futures functionality"""
     import os
     
     api_key = os.getenv('BINANCE_API_KEY', '')
@@ -492,7 +492,7 @@ async def test_binance_futures():
     
     if not api_key or not api_secret:
         logger.warning("No Binance API credentials, using testnet defaults")
-        # 测试网默认值（需要用户自己申请）
+        # Testnet defaults (users need to apply for their own keys)
         api_key = "your_testnet_api_key"
         api_secret = "your_testnet_api_secret"
     
@@ -504,14 +504,14 @@ async def test_binance_futures():
     )
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         
-        # 获取账户余额
+        # Get account balance
         balance = await executor.get_account_balance()
         logger.info(f"Account balance: {balance}")
         
-        # 获取所有持仓
+        # Get all positions
         positions = await executor.get_all_positions()
         logger.info(f"Current positions: {len(positions)}")
         

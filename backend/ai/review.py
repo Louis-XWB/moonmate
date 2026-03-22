@@ -1,6 +1,6 @@
 """
-AI交易复盘模块
-使用LLM分析历史交易，总结经验教训
+AI Trade Review Module
+Uses LLM to analyze historical trades and summarize lessons learned
 """
 
 import asyncio
@@ -18,44 +18,44 @@ logger = get_logger("ai_review")
 
 
 class ReviewType(str, Enum):
-    """复盘类型"""
-    SINGLE_TRADE = "single_trade"  # 单笔交易
-    DAILY = "daily"  # 日度复盘
-    WEEKLY = "weekly"  # 周度复盘
-    STRATEGY = "strategy"  # 策略复盘
+    """Review type"""
+    SINGLE_TRADE = "single_trade"  # Single trade
+    DAILY = "daily"  # Daily review
+    WEEKLY = "weekly"  # Weekly review
+    STRATEGY = "strategy"  # Strategy review
 
 
 class TradeReview(BaseModel):
-    """交易复盘结果"""
+    """Trade review result"""
     review_type: ReviewType
-    period: str = Field(..., description="复盘周期，如 '2024-01-28' 或 '2024-W04'")
+    period: str = Field(..., description="Review period, e.g. '2024-01-28' or '2024-W04'")
     
-    # 交易统计
+    # Trade statistics
     total_trades: int = Field(default=0)
     winning_trades: int = Field(default=0)
     losing_trades: int = Field(default=0)
     win_rate: float = Field(default=0, ge=0, le=1)
     
-    # 盈亏统计
+    # P&LStatistics
     total_pnl: float = Field(default=0)
     total_pnl_pct: float = Field(default=0)
     avg_win: float = Field(default=0)
     avg_loss: float = Field(default=0)
     profit_factor: float = Field(default=0)
     
-    # AI分析
-    performance_rating: str = Field(default="", description="表现评级: excellent/good/average/poor")
-    strengths: List[str] = Field(default_factory=list, description="优势")
-    weaknesses: List[str] = Field(default_factory=list, description="劣势")
-    lessons_learned: List[str] = Field(default_factory=list, description="经验教训")
-    suggestions: List[str] = Field(default_factory=list, description="改进建议")
-    summary: str = Field(default="", description="总结")
+    # AIAnalysis
+    performance_rating: str = Field(default="", description="Performance rating: excellent/good/average/poor")
+    strengths: List[str] = Field(default_factory=list, description="Strengths")
+    weaknesses: List[str] = Field(default_factory=list, description="Weaknesses")
+    lessons_learned: List[str] = Field(default_factory=list, description="Lessons learned")
+    suggestions: List[str] = Field(default_factory=list, description="Improvement suggestions")
+    summary: str = Field(default="", description="Summary")
     
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class AIReviewer:
-    """AI复盘分析器"""
+    """AI trade reviewer"""
     
     def __init__(
         self,
@@ -71,9 +71,9 @@ class AIReviewer:
         order: Order,
         market_context: Optional[Dict] = None
     ) -> TradeReview:
-        """复盘单笔交易"""
+        """Review a single trade"""
         
-        # 计算交易统计
+        # Calculate trade statistics
         pnl = order.realized_pnl or 0
         pnl_pct = (pnl / order.filled_value * 100) if order.filled_value > 0 else 0
         
@@ -86,17 +86,17 @@ class AIReviewer:
             "total_pnl_pct": pnl_pct
         }
         
-        # 构建提示词
+        # Build prompt
         prompt = self._build_single_trade_prompt(order, stats, market_context)
         
         try:
-            # 调用LLM
+            # Call LLM
             response = await asyncio.to_thread(
                 self._call_llm,
                 prompt
             )
             
-            # 解析响应
+            # Parse response
             review = self._parse_response(
                 ReviewType.SINGLE_TRADE,
                 order.created_at.strftime("%Y-%m-%d"),
@@ -117,15 +117,15 @@ class AIReviewer:
         review_type: ReviewType = ReviewType.DAILY,
         market_context: Optional[Dict] = None
     ) -> TradeReview:
-        """复盘一段时间的交易"""
+        """Review trades over a period"""
         
         if not orders:
             return self._create_fallback_review(review_type, {})
         
-        # 计算统计数据
+        # CalculateStatistics
         stats = self._calculate_stats(orders)
         
-        # 确定周期
+        # Determine period
         if review_type == ReviewType.DAILY:
             period = orders[0].created_at.strftime("%Y-%m-%d")
         elif review_type == ReviewType.WEEKLY:
@@ -133,17 +133,17 @@ class AIReviewer:
         else:
             period = f"{orders[0].created_at.strftime('%Y-%m-%d')} to {orders[-1].created_at.strftime('%Y-%m-%d')}"
         
-        # 构建提示词
+        # Build prompt
         prompt = self._build_period_prompt(orders, stats, review_type, market_context)
         
         try:
-            # 调用LLM
+            # Call LLM
             response = await asyncio.to_thread(
                 self._call_llm,
                 prompt
             )
             
-            # 解析响应
+            # Parse response
             review = self._parse_response(review_type, period, stats, response)
             
             logger.info(
@@ -157,7 +157,7 @@ class AIReviewer:
             return self._create_fallback_review(review_type, stats, period)
     
     def _calculate_stats(self, orders: List[Order]) -> Dict:
-        """计算交易统计"""
+        """Calculate trade statistics"""
         total_trades = len(orders)
         winning_trades = sum(1 for o in orders if (o.realized_pnl or 0) > 0)
         losing_trades = sum(1 for o in orders if (o.realized_pnl or 0) < 0)
@@ -172,7 +172,7 @@ class AIReviewer:
         
         profit_factor = sum(wins) / sum(losses) if losses and sum(losses) > 0 else 0
         
-        # 计算总盈亏百分比
+        # Calculate total P&L percentage
         total_value = sum(o.filled_value for o in orders if o.filled_value > 0)
         total_pnl_pct = (total_pnl / total_value * 100) if total_value > 0 else 0
         
@@ -194,56 +194,56 @@ class AIReviewer:
         stats: Dict,
         market_context: Optional[Dict]
     ) -> str:
-        """构建单笔交易复盘提示词"""
+        """Build single trade review prompt"""
         
-        system_prompt = """你是一个专业的交易教练，擅长分析交易决策并提供建设性反馈。
+        system_prompt = """You are a professional trading coach skilled at analyzing trading decisions and providing constructive feedback.
 
-你的任务是复盘一笔交易，分析其成功或失败的原因，并给出改进建议。
+Your task is to review a trade, analyze the reasons for its success or failure, and provide improvement suggestions.
 
-你必须以JSON格式输出，包含以下字段：
-- performance_rating: "excellent"(优秀), "good"(良好), "average"(一般), 或 "poor"(差)
-- strengths: 2-3个优势的列表
-- weaknesses: 2-3个劣势的列表
-- lessons_learned: 2-3个经验教训的列表
-- suggestions: 2-3个改进建议的列表
-- summary: 一句话总结（30字以内）
+You must output in JSON format with the following fields:
+- performance_rating: "excellent", "good", "average", or "poor"
+- strengths: a list of 2-3 strengths
+- weaknesses: a list of 2-3 weaknesses
+- lessons_learned: a list of 2-3 lessons learned
+- suggestions: a list of 2-3 improvement suggestions
+- summary: a one-sentence summary (under 30 words)
 
-评估标准：
-1. 进场时机是否合理
-2. 止损止盈设置是否恰当
-3. 仓位管理是否合理
-4. 是否遵守交易纪律
-5. 是否考虑了市场环境
+Evaluation criteria:
+1. Was the entry timing reasonable
+2. Were stop-loss/take-profit levels appropriate
+3. Was position sizing reasonable
+4. Was trading discipline followed
+5. Was the market environment considered
 
-注意事项：
-1. 保持客观，既要肯定优点也要指出不足
-2. 建议要具体可执行
-3. 即使是盈利的交易也可能有改进空间
-4. 即使是亏损的交易也可能有可取之处"""
+Guidelines:
+1. Stay objective, acknowledge strengths while pointing out weaknesses
+2. Suggestions should be specific and actionable
+3. Even profitable trades may have room for improvement
+4. Even losing trades may have commendable aspects"""
 
         trade_info = f"""
-交易信息：
-- 币种: {order.symbol}
-- 方向: {order.side} ({order.direction})
-- 数量: {order.quantity}
-- 进场价: ${order.avg_fill_price:.2f}
-- 止损价: ${order.stop_loss:.2f if order.stop_loss else 'N/A'}
-- 止盈价: ${order.take_profit:.2f if order.take_profit else 'N/A'}
-- 盈亏: ${stats['total_pnl']:.2f} ({stats['total_pnl_pct']:+.2f}%)
-- 状态: {order.status}
+Trade Information:
+- Symbol: {order.symbol}
+- Direction: {order.side} ({order.direction})
+- Quantity: {order.quantity}
+- Entry Price: ${order.avg_fill_price:.2f}
+- Stop-loss Price: ${order.stop_loss:.2f if order.stop_loss else 'N/A'}
+- Take-profit Price: ${order.take_profit:.2f if order.take_profit else 'N/A'}
+- P&L: ${stats['total_pnl']:.2f} ({stats['total_pnl_pct']:+.2f}%)
+- Status: {order.status}
 """
 
         context_info = ""
         if market_context:
-            context_info = f"\n市场环境:\n{json.dumps(market_context, ensure_ascii=False, indent=2)}"
+            context_info = f"\nMarket Context:\n{json.dumps(market_context, ensure_ascii=False, indent=2)}"
         
         user_prompt = f"""
-请复盘以下交易：
+Please review the following trade:
 
 {trade_info}
 {context_info}
 
-请给出你的复盘分析（JSON格式）：
+Please provide your review analysis (JSON format):
 """
         
         return f"{system_prompt}\n\n{user_prompt}"
@@ -255,79 +255,79 @@ class AIReviewer:
         review_type: ReviewType,
         market_context: Optional[Dict]
     ) -> str:
-        """构建周期复盘提示词"""
+        """Build period review prompt"""
         
-        system_prompt = """你是一个专业的交易教练，擅长分析交易表现并提供战略性建议。
+        system_prompt = """You are a professional trading coach skilled at analyzing trading performance and providing strategic advice.
 
-你的任务是复盘一段时间的交易表现，分析整体策略的有效性，并给出改进方向。
+Your task is to review trading performance over a period of time, analyze the effectiveness of the overall strategy, and provide improvement directions.
 
-你必须以JSON格式输出，包含以下字段：
-- performance_rating: "excellent"(优秀), "good"(良好), "average"(一般), 或 "poor"(差)
-- strengths: 3-5个优势的列表
-- weaknesses: 3-5个劣势的列表
-- lessons_learned: 3-5个经验教训的列表
-- suggestions: 3-5个改进建议的列表
-- summary: 一句话总结（50字以内）
+You must output in JSON format with the following fields:
+- performance_rating: "excellent", "good", "average", or "poor"
+- strengths: a list of 3-5 strengths
+- weaknesses: a list of 3-5 weaknesses
+- lessons_learned: a list of 3-5 lessons learned
+- suggestions: a list of 3-5 improvement suggestions
+- summary: a one-sentence summary (under 50 words)
 
-评估标准：
-1. 胜率和盈亏比是否健康
-2. 交易频率是否合理
-3. 风险控制是否到位
-4. 策略执行是否一致
-5. 是否适应市场变化
+Evaluation criteria:
+1. Are win rate and profit/loss ratio healthy
+2. Is trading frequency reasonable
+3. Is risk control adequate
+4. Is strategy execution consistent
+5. Is there adaptation to market changes
 
-注意事项：
-1. 关注整体表现而非个别交易
-2. 识别系统性问题
-3. 建议要有战略高度
-4. 考虑心理因素和纪律性"""
+Guidelines:
+1. Focus on overall performance rather than individual trades
+2. Identify systematic issues
+3. Suggestions should be strategic
+4. Consider psychological factors and discipline"""
 
         stats_info = f"""
-交易统计：
-- 总交易数: {stats['total_trades']}
-- 盈利交易: {stats['winning_trades']}
-- 亏损交易: {stats['losing_trades']}
-- 胜率: {stats['win_rate']:.1%}
-- 总盈亏: ${stats['total_pnl']:.2f} ({stats['total_pnl_pct']:+.2f}%)
-- 平均盈利: ${stats['avg_win']:.2f}
-- 平均亏损: ${stats['avg_loss']:.2f}
-- 盈亏比: {stats['profit_factor']:.2f}
+Trade Statistics:
+- Total trades: {stats['total_trades']}
+- Winning trades: {stats['winning_trades']}
+- Losing trades: {stats['losing_trades']}
+- Win rate: {stats['win_rate']:.1%}
+- Total P&L: ${stats['total_pnl']:.2f} ({stats['total_pnl_pct']:+.2f}%)
+- Average win: ${stats['avg_win']:.2f}
+- Average loss: ${stats['avg_loss']:.2f}
+- Profit factor: {stats['profit_factor']:.2f}
 """
 
-        # 列出部分交易详情
+        # List partial trade details
         trades_sample = []
-        for i, order in enumerate(orders[:5]):  # 最多显示5笔
+        for i, order in enumerate(orders[:5]):  # Show up to 5 trades
             pnl = order.realized_pnl or 0
             trades_sample.append(
                 f"{i+1}. {order.symbol} {order.side} "
                 f"${order.avg_fill_price:.2f} → "
-                f"{'盈利' if pnl > 0 else '亏损'} ${abs(pnl):.2f}"
+                f"{'Profit' if pnl > 0 else 'Loss'} ${abs(pnl):.2f}"
             )
         
         trades_info = "\n".join(trades_sample)
         if len(orders) > 5:
-            trades_info += f"\n... 还有 {len(orders) - 5} 笔交易"
+            trades_info += f"\n... and {len(orders) - 5} more trades"
         
         context_info = ""
         if market_context:
-            context_info = f"\n市场环境:\n{json.dumps(market_context, ensure_ascii=False, indent=2)}"
+            context_info = f"\nMarket Context:\n{json.dumps(market_context, ensure_ascii=False, indent=2)}"
         
         user_prompt = f"""
-请复盘以下 {review_type.value} 的交易表现：
+Please review the following {review_type.value} trading performance:
 
 {stats_info}
 
-部分交易详情：
+Partial trade details:
 {trades_info}
 {context_info}
 
-请给出你的复盘分析（JSON格式）：
+Please provide your review analysis (JSON format):
 """
         
         return f"{system_prompt}\n\n{user_prompt}"
     
     def _call_llm(self, prompt: str) -> str:
-        """调用LLM"""
+        """Call LLM"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -345,9 +345,9 @@ class AIReviewer:
         stats: Dict,
         response: str
     ) -> TradeReview:
-        """解析LLM响应"""
+        """Parse LLM response"""
         try:
-            # 提取JSON部分
+            # Extract JSON part
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
             if json_start >= 0 and json_end > json_start:
@@ -356,7 +356,7 @@ class AIReviewer:
             else:
                 raise ValueError("No JSON found in response")
             
-            # 创建复盘结果
+            # Create review result
             review = TradeReview(
                 review_type=review_type,
                 period=period,
@@ -381,11 +381,11 @@ class AIReviewer:
         stats: Dict,
         period: str = ""
     ) -> TradeReview:
-        """创建降级复盘结果"""
+        """Create fallback review result"""
         return TradeReview(
             review_type=review_type,
             period=period or datetime.now().strftime("%Y-%m-%d"),
             **stats,
             performance_rating="unknown",
-            summary="AI分析暂时不可用"
+            summary="AI analysis temporarily unavailable"
         )

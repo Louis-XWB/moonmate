@@ -1,5 +1,5 @@
 # Auto Trading Agent - Backtest Module
-# 回测模块：历史数据回测、指标计算
+# Backtest module: historical data backtesting, metrics calculation
 
 from .engine import BacktestEngine, BacktestResult
 

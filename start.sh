@@ -1,68 +1,68 @@
 #!/bin/bash
 
-# Auto Trading Agent 启动脚本
-# 用于同时启动后端API和前端开发服务器
+# Auto Trading Agent startup script
+# Starts both the backend API and frontend dev server
 
 echo "=========================================="
-echo "  Auto Trading Agent - 启动脚本"
+echo "  Auto Trading Agent - Startup Script"
 echo "=========================================="
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# 项目根目录
+# Project root directory
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 检查Python依赖
-echo -e "${YELLOW}[1/4] 检查Python依赖...${NC}"
+# Check Python dependencies
+echo -e "${YELLOW}[1/4] Checking Python dependencies...${NC}"
 cd "$PROJECT_DIR"
 pip3 install -q -r requirements.txt 2>/dev/null
-echo -e "${GREEN}✓ Python依赖已安装${NC}"
+echo -e "${GREEN}✓ Python dependencies installed${NC}"
 
-# 检查Node依赖
-echo -e "${YELLOW}[2/4] 检查前端依赖...${NC}"
+# Check Node dependencies
+echo -e "${YELLOW}[2/4] Checking frontend dependencies...${NC}"
 cd "$PROJECT_DIR/frontend"
 if [ ! -d "node_modules" ]; then
-    echo "安装前端依赖..."
+    echo "Installing frontend dependencies..."
     pnpm install --silent
 fi
-echo -e "${GREEN}✓ 前端依赖已安装${NC}"
+echo -e "${GREEN}✓ Frontend dependencies installed${NC}"
 
-# 启动后端
-echo -e "${YELLOW}[3/4] 启动后端API服务...${NC}"
+# Start backend
+echo -e "${YELLOW}[3/4] Starting backend API service...${NC}"
 cd "$PROJECT_DIR"
 export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
 python3 -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
-echo -e "${GREEN}✓ 后端服务已启动 (PID: $BACKEND_PID)${NC}"
+echo -e "${GREEN}✓ Backend service started (PID: $BACKEND_PID)${NC}"
 
-# 等待后端启动
+# Wait for backend to start
 sleep 3
 
-# 启动前端
-echo -e "${YELLOW}[4/4] 启动前端开发服务...${NC}"
+# Start frontend
+echo -e "${YELLOW}[4/4] Starting frontend dev server...${NC}"
 cd "$PROJECT_DIR/frontend"
 pnpm dev &
 FRONTEND_PID=$!
-echo -e "${GREEN}✓ 前端服务已启动 (PID: $FRONTEND_PID)${NC}"
+echo -e "${GREEN}✓ Frontend service started (PID: $FRONTEND_PID)${NC}"
 
 echo ""
 echo "=========================================="
-echo -e "${GREEN}  所有服务已启动!${NC}"
+echo -e "${GREEN}  All services started!${NC}"
 echo "=========================================="
 echo ""
-echo "  后端API:  http://localhost:8000"
-echo "  前端界面: http://localhost:3000"
-echo "  API文档:  http://localhost:8000/docs"
+echo "  Backend API:  http://localhost:8000"
+echo "  Frontend UI:  http://localhost:3000"
+echo "  API Docs:     http://localhost:8000/docs"
 echo ""
-echo "  按 Ctrl+C 停止所有服务"
+echo "  Press Ctrl+C to stop all services"
 echo "=========================================="
 
-# 捕获退出信号
-trap "echo '正在停止服务...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" SIGINT SIGTERM
+# Capture exit signals
+trap "echo 'Stopping services...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" SIGINT SIGTERM
 
-# 等待
+# Wait
 wait

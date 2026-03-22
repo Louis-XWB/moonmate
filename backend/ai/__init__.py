@@ -1,5 +1,5 @@
 # Auto Trading Agent - AI Layer
-# AI信号层：情绪分析、热点检测、信号生成
+# AI signal layer: sentiment analysis, hot topic detection, signal generation
 
 from .signal_generator import AISignalGenerator
 from .sentiment import SentimentAnalyzer

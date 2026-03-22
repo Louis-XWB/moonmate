@@ -1,6 +1,6 @@
 """
-新闻影响评估模块
-使用LLM分析新闻对加密货币价格的影响
+News Impact Assessment Module
+Uses LLM to analyze the impact of news on cryptocurrency prices
 """
 
 import asyncio
@@ -17,38 +17,38 @@ logger = get_logger("news_analyzer")
 
 
 class ImpactLevel(str, Enum):
-    """影响等级"""
-    CRITICAL = "critical"  # 重大影响
-    HIGH = "high"  # 高影响
-    MEDIUM = "medium"  # 中等影响
-    LOW = "low"  # 低影响
-    NONE = "none"  # 无影响
+    """Impact level"""
+    CRITICAL = "critical"  # Critical impact
+    HIGH = "high"  # High impact
+    MEDIUM = "medium"  # Medium impact
+    LOW = "low"  # Low impact
+    NONE = "none"  # No impact
 
 
 class ImpactDirection(str, Enum):
-    """影响方向"""
-    BULLISH = "bullish"  # 利好
-    BEARISH = "bearish"  # 利空
-    NEUTRAL = "neutral"  # 中性
+    """Impact direction"""
+    BULLISH = "bullish"  # Bullish
+    BEARISH = "bearish"  # Bearish
+    NEUTRAL = "neutral"  # neutral
 
 
 class NewsImpact(BaseModel):
-    """新闻影响评估结果"""
-    title: str = Field(..., description="新闻标题")
-    summary: str = Field(default="", description="新闻摘要")
-    impact_level: ImpactLevel = Field(..., description="影响等级")
-    impact_direction: ImpactDirection = Field(..., description="影响方向")
-    impact_score: float = Field(default=0, ge=-1, le=1, description="影响分数 -1到1")
-    importance_stars: int = Field(default=3, ge=1, le=5, description="重要性星级 (1-5星)")
-    confidence: float = Field(default=0.5, ge=0, le=1, description="置信度")
-    affected_symbols: List[str] = Field(default_factory=list, description="受影响的币种")
-    key_points: List[str] = Field(default_factory=list, description="关键要点")
-    reasoning: str = Field(default="", description="分析理由")
+    """News impact assessment result"""
+    title: str = Field(..., description="News title")
+    summary: str = Field(default="", description="News summary")
+    impact_level: ImpactLevel = Field(..., description="Impact level")
+    impact_direction: ImpactDirection = Field(..., description="Impact direction")
+    impact_score: float = Field(default=0, ge=-1, le=1, description="Impact score from -1 to 1")
+    importance_stars: int = Field(default=3, ge=1, le=5, description="Importance rating (1-5 stars)")
+    confidence: float = Field(default=0.5, ge=0, le=1, description="Confidence")
+    affected_symbols: List[str] = Field(default_factory=list, description="Affected tokens")
+    key_points: List[str] = Field(default_factory=list, description="Key takeaways")
+    reasoning: str = Field(default="", description="Analysis reasoning")
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
 class NewsAnalyzer:
-    """新闻分析器"""
+    """News analyzer"""
     
     def __init__(
         self,
@@ -59,7 +59,7 @@ class NewsAnalyzer:
         self.temperature = temperature
         self.client = OpenAI()
         
-        # 新闻缓存
+        # News cache
         self._cache: Dict[str, NewsImpact] = {}
     
     async def analyze_news(
@@ -68,27 +68,27 @@ class NewsAnalyzer:
         content: Optional[str] = None,
         symbol: Optional[str] = None
     ) -> NewsImpact:
-        """分析单条新闻"""
+        """Analyze a single news item"""
         
-        # 检查缓存
+        # Check cache
         cache_key = f"{title[:50]}_{symbol or 'all'}"
         if cache_key in self._cache:
             return self._cache[cache_key]
         
-        # 构建提示词
+        # Build prompt
         prompt = self._build_prompt(title, content, symbol)
         
         try:
-            # 调用LLM
+            # Call LLM
             response = await asyncio.to_thread(
                 self._call_llm,
                 prompt
             )
             
-            # 解析响应
+            # Parse response
             impact = self._parse_response(title, response)
             
-            # 缓存结果
+            # Cache result
             self._cache[cache_key] = impact
             
             logger.info(
@@ -99,7 +99,7 @@ class NewsAnalyzer:
             
         except Exception as e:
             logger.error(f"News analysis error: {e}")
-            # 返回中性影响
+            # Return neutral impact
             return NewsImpact(
                 title=title,
                 impact_level=ImpactLevel.NONE,
@@ -114,7 +114,7 @@ class NewsAnalyzer:
         news_list: List[Dict[str, str]],
         symbol: Optional[str] = None
     ) -> List[NewsImpact]:
-        """批量分析新闻"""
+        """Analyze news in batch"""
         tasks = [
             self.analyze_news(
                 title=news.get("title", ""),
@@ -131,65 +131,65 @@ class NewsAnalyzer:
         content: Optional[str],
         symbol: Optional[str]
     ) -> str:
-        """构建提示词"""
+        """Build prompt"""
         
-        system_prompt = """你是一个专业的加密货币市场分析师，擅长评估新闻事件对加密货币价格的影响。
+        system_prompt = """You are a professional cryptocurrency market analyst skilled at assessing the impact of news events on cryptocurrency prices.
 
-你的任务是分析给定的新闻，评估其对加密货币市场的影响。
+Your task is to analyze the given news and assess its impact on the cryptocurrency market.
 
-你必须以JSON格式输出，包含以下字段：
-- impact_level: "critical"(重大), "high"(高), "medium"(中等), "low"(低), 或 "none"(无影响)
-- impact_direction: "bullish"(利好), "bearish"(利空), 或 "neutral"(中性)
-- impact_score: -1到1之间的数值，负数表示利空，正数表示利好
-- importance_stars: 1-5之间的整数，表示新闻的重要性星级（1星=不重要, 5星=极其重要）
-- confidence: 0-1之间的数值，表示你对这个判断的置信度
-- affected_symbols: 受影响的币种列表，如 ["BTC", "ETH"]，如果是全市场影响则返回 ["ALL"]
-- key_points: 3-5个关键要点的列表
-- reasoning: 简短解释你的判断理由（50字以内）
+You must output in JSON format with the following fields:
+- impact_level: "critical", "high", "medium", "low", or "none"
+- impact_direction: "bullish", "bearish", or "neutral"
+- impact_score: a value between -1 and 1, negative means bearish, positive means bullish
+- importance_stars: an integer between 1-5 indicating the news importance level (1=unimportant, 5=extremely important)
+- confidence: a value between 0-1 indicating your confidence in the judgment
+- affected_symbols: list of affected tokens, e.g. ["BTC", "ETH"], use ["ALL"] for market-wide impact
+- key_points: a list of 3-5 key takeaways
+- reasoning: a brief explanation of your reasoning (under 50 words)
 
-评估标准：
+Evaluation criteria:
 
-**影响等级 (impact_level)**:
-1. **重大影响 (critical)**: 监管政策、重大黑客事件、主流机构采用、协议重大漏洞
-2. **高影响 (high)**: 大型交易所上币、知名投资机构投资、重要技术升级
-3. **中等影响 (medium)**: 一般性合作、小型交易所事件、行业报告
-4. **低影响 (low)**: 社区讨论、小道消息、技术性更新
-5. **无影响 (none)**: 与加密货币无关的新闻
+**Impact Level**:
+1. **Critical**: regulatory policies, major hacks, mainstream institutional adoption, major protocol vulnerabilities
+2. **High**: major exchange listings, notable institutional investments, important technical upgrades
+3. **Medium**: general partnerships, minor exchange events, industry reports
+4. **Low**: community discussions, rumors, technical updates
+5. **None**: news unrelated to cryptocurrency
 
-**重要性星级 (importance_stars)**:
-- **5星**: 全球重大事件，影响整个加密市场（如美联储政策、主要国家监管政策、重大黑天鹅事件）
-- **4星**: 重要事件，影响多个主流币种（如大型机构入场、重要技术破、交易所事件）
-- **3星**: 中等重要事件，影响特定领域或币种（如项目升级、合作公告、行业报告）
-- **2星**: 较低重要性，短期影响小（如社区讨论、小型交易所上币、技术更新）
-- **1星**: 几乎无影响，可忽略（如小道消息、无关新闻、营销宣传）
+**Importance Stars**:
+- **5 stars**: major global events affecting the entire crypto market (e.g. Fed policy, major country regulations, black swan events)
+- **4 stars**: important events affecting multiple major tokens (e.g. large institutional entry, major technical breakthroughs, exchange events)
+- **3 stars**: moderately important events affecting specific sectors or tokens (e.g. project upgrades, partnership announcements, industry reports)
+- **2 stars**: lower importance, minimal short-term impact (e.g. community discussions, minor exchange listings, technical updates)
+- **1 star**: almost no impact, negligible (e.g. rumors, unrelated news, marketing promotions)
 
-注意事项：
-1. 保持客观，不要夸大影响
-2. 考虑新闻的可信度和来源
-3. 区分短期影响和长期影响
-4. 如果新闻模糊或不确定，降低置信度"""
+Guidelines:
+1. Stay objective, do not exaggerate impact
+2. Consider the credibility and source of the news
+3. Distinguish between short-term and long-term impact
+4. If the news is vague or uncertain, lower confidence"""
 
-        news_text = f"标题: {title}"
+        news_text = f"Title: {title}"
         if content:
-            news_text += f"\n内容: {content[:500]}"  # 限制内容长度
+            news_text += f"\nContent: {content[:500]}"  # Limit content length
         
         symbol_hint = ""
         if symbol:
-            symbol_hint = f"\n\n特别关注对 {symbol} 的影响。"
+            symbol_hint = f"\n\nPay special attention to the impact on {symbol}."
         
         user_prompt = f"""
-请分析以下新闻：
+Please analyze the following news:
 
 {news_text}
 {symbol_hint}
 
-请给出你的影响评估（JSON格式）：
+Please provide your impact assessment (JSON format):
 """
         
         return f"{system_prompt}\n\n{user_prompt}"
     
     def _call_llm(self, prompt: str) -> str:
-        """调用LLM"""
+        """Call LLM"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -201,9 +201,9 @@ class NewsAnalyzer:
         return response.choices[0].message.content
     
     def _parse_response(self, title: str, response: str) -> NewsImpact:
-        """解析LLM响应"""
+        """Parse LLM response"""
         try:
-            # 提取JSON部分
+            # Extract JSON part
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
             if json_start >= 0 and json_end > json_start:
@@ -212,7 +212,7 @@ class NewsAnalyzer:
             else:
                 raise ValueError("No JSON found in response")
             
-            # 创建影响评估
+            # Create impact assessment
             impact = NewsImpact(
                 title=title,
                 impact_level=ImpactLevel(data.get("impact_level", "none")),
@@ -243,7 +243,7 @@ class NewsAnalyzer:
         news_impacts: List[NewsImpact],
         time_decay: float = 0.5
     ) -> Dict:
-        """从新闻影响中计算市场情绪"""
+        """Calculate market sentiment from news impacts"""
         if not news_impacts:
             return {
                 "overall_score": 0,
@@ -254,17 +254,17 @@ class NewsAnalyzer:
                 "neutral_count": 0
             }
         
-        # 统计各方向新闻数量
+        # Count news by direction
         bullish_count = sum(1 for n in news_impacts if n.impact_direction == ImpactDirection.BULLISH)
         bearish_count = sum(1 for n in news_impacts if n.impact_direction == ImpactDirection.BEARISH)
         neutral_count = sum(1 for n in news_impacts if n.impact_direction == ImpactDirection.NEUTRAL)
         
-        # 计算加权平均分数
+        # Calculate weighted average score
         total_score = 0
         total_weight = 0
         
         for impact in news_impacts:
-            # 根据影响等级设置权重
+            # Set weight based on impact level
             weight_map = {
                 ImpactLevel.CRITICAL: 5.0,
                 ImpactLevel.HIGH: 3.0,
@@ -274,7 +274,7 @@ class NewsAnalyzer:
             }
             weight = weight_map.get(impact.impact_level, 1.0)
             
-            # 考虑置信度
+            # Factor in confidence
             weight *= impact.confidence
             
             total_score += impact.impact_score * weight
@@ -282,7 +282,7 @@ class NewsAnalyzer:
         
         overall_score = total_score / total_weight if total_weight > 0 else 0
         
-        # 确定整体方向
+        # Determine overall direction
         if overall_score > 0.2:
             overall_direction = "bullish"
         elif overall_score < -0.2:
@@ -290,7 +290,7 @@ class NewsAnalyzer:
         else:
             overall_direction = "neutral"
         
-        # 计算整体置信度
+        # Calculate overall confidence
         avg_confidence = sum(n.confidence for n in news_impacts) / len(news_impacts)
         
         return {
@@ -304,5 +304,5 @@ class NewsAnalyzer:
         }
     
     def clear_cache(self):
-        """清除缓存"""
+        """Clear cache"""
         self._cache.clear()

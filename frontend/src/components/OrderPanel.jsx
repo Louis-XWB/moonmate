@@ -38,18 +38,18 @@ function OrderPanel() {
   })
 
   const statusConfig = {
-    pending: { icon: Clock, color: 'text-slate-400', label: '待提交' },
-    submitted: { icon: Clock, color: 'text-amber-400', label: '已提交' },
-    partial_filled: { icon: AlertCircle, color: 'text-amber-400', label: '部分成交' },
-    filled: { icon: CheckCircle, color: 'text-emerald-400', label: '已成交' },
-    cancelled: { icon: XCircle, color: 'text-slate-400', label: '已取消' },
-    rejected: { icon: XCircle, color: 'text-red-400', label: '被拒绝' },
+    pending: { icon: Clock, color: 'text-slate-400', label: 'Pending' },
+    submitted: { icon: Clock, color: 'text-amber-400', label: 'Submitted' },
+    partial_filled: { icon: AlertCircle, color: 'text-amber-400', label: 'Partially Filled' },
+    filled: { icon: CheckCircle, color: 'text-emerald-400', label: 'Filled' },
+    cancelled: { icon: XCircle, color: 'text-slate-400', label: 'Cancelled' },
+    rejected: { icon: XCircle, color: 'text-red-400', label: 'Rejected' },
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">订单记录</h2>
+        <h2 className="text-xl font-bold">Order History</h2>
         <div className="flex items-center space-x-4">
           <div className="flex space-x-2">
             {['all', 'active', 'filled', 'cancelled'].map(f => (
@@ -57,16 +57,16 @@ function OrderPanel() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                  filter === f 
-                    ? 'bg-primary-600 text-white' 
+                  filter === f
+                    ? 'bg-primary-600 text-white'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
-                {f === 'all' ? '全部' : f === 'active' ? '活跃' : f === 'filled' ? '已成交' : '已取消'}
+                {f === 'all' ? 'All' : f === 'active' ? 'Active' : f === 'filled' ? 'Filled' : 'Cancelled'}
               </button>
             ))}
           </div>
-          <button 
+          <button
             onClick={fetchOrders}
             className="btn btn-secondary"
             disabled={loading}
@@ -78,8 +78,8 @@ function OrderPanel() {
 
       {filteredOrders.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-slate-400">暂无订单记录</p>
-          <p className="text-sm text-slate-500 mt-2">当策略执行交易时，订单将显示在这里</p>
+          <p className="text-slate-400">No order records</p>
+          <p className="text-sm text-slate-500 mt-2">Orders will appear here when the strategy executes trades</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -87,34 +87,34 @@ function OrderPanel() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>订单ID</th>
-                  <th>交易对</th>
-                  <th>方向</th>
-                  <th>类型</th>
-                  <th>价格</th>
-                  <th>数量</th>
-                  <th>成交量</th>
-                  <th>状态</th>
-                  <th>手续费</th>
-                  <th>创建时间</th>
+                  <th>Order ID</th>
+                  <th>Pair</th>
+                  <th>Side</th>
+                  <th>Type</th>
+                  <th>Price</th>
+                  <th>Size</th>
+                  <th>Filled</th>
+                  <th>Status</th>
+                  <th>Fee</th>
+                  <th>Created</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOrders.map((order) => {
                   const status = statusConfig[order.status] || statusConfig.pending
                   const StatusIcon = status.icon
-                  
+
                   return (
                     <tr key={order.id}>
                       <td className="font-mono text-xs">{order.id?.slice(0, 8)}...</td>
                       <td className="font-medium">{order.symbol}</td>
                       <td>
                         <span className={order.side === 'buy' ? 'text-emerald-400' : 'text-red-400'}>
-                          {order.side === 'buy' ? '买入' : '卖出'}
+                          {order.side === 'buy' ? 'Buy' : 'Sell'}
                         </span>
                       </td>
                       <td className="text-slate-400">
-                        {order.type === 'limit' ? '限价' : order.type === 'market' ? '市价' : order.type}
+                        {order.type === 'limit' ? 'Limit' : order.type === 'market' ? 'Market' : order.type}
                       </td>
                       <td>${order.price?.toLocaleString()}</td>
                       <td>{order.size?.toFixed(4)}</td>
@@ -138,28 +138,28 @@ function OrderPanel() {
         </div>
       )}
 
-      {/* 订单统计 */}
+      {/* Order statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card">
-          <p className="text-slate-400 text-sm">总订单数</p>
+          <p className="text-slate-400 text-sm">Total Orders</p>
           <p className="text-2xl font-bold mt-1">{orders.length}</p>
         </div>
         <div className="card">
-          <p className="text-slate-400 text-sm">已成交</p>
+          <p className="text-slate-400 text-sm">Filled</p>
           <p className="text-2xl font-bold mt-1 text-emerald-400">
             {orders.filter(o => o.status === 'filled').length}
           </p>
         </div>
         <div className="card">
-          <p className="text-slate-400 text-sm">成交率</p>
+          <p className="text-slate-400 text-sm">Fill Rate</p>
           <p className="text-2xl font-bold mt-1">
-            {orders.length > 0 
+            {orders.length > 0
               ? ((orders.filter(o => o.status === 'filled').length / orders.length) * 100).toFixed(1)
               : 0}%
           </p>
         </div>
         <div className="card">
-          <p className="text-slate-400 text-sm">总手续费</p>
+          <p className="text-slate-400 text-sm">Total Fees</p>
           <p className="text-2xl font-bold mt-1 text-amber-400">
             ${orders.reduce((sum, o) => sum + (o.fee || 0), 0).toFixed(4)}
           </p>

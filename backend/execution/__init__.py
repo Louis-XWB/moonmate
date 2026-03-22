@@ -1,5 +1,5 @@
 # Auto Trading Agent - Execution Layer
-# 执行层：订单管理、状态机、执行器
+# Execution layer: order management, state machine, executors
 
 from .order_manager import OrderManager
 from .executor import Executor, MockExecutor

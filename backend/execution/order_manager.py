@@ -1,6 +1,6 @@
 """
-订单管理器
-管理订单生命周期、状态转换、持仓跟踪
+Order Manager
+Manages order lifecycle, status transitions, and position tracking
 """
 
 from datetime import datetime
@@ -13,14 +13,14 @@ logger = get_logger("order_manager")
 
 
 class OrderManager:
-    """订单管理器"""
+    """Order Manager"""
     
     def __init__(self):
         self.orders: Dict[str, Order] = {}
         self.positions: Dict[str, Position] = {}
         self.event_bus = get_event_bus()
         
-        # 统计数据
+        # Statistics
         self.total_orders = 0
         self.filled_orders = 0
         self.cancelled_orders = 0
@@ -32,19 +32,19 @@ class OrderManager:
         size: float,
         order_type: OrderType = OrderType.LIMIT
     ) -> Order:
-        """从信号创建订单"""
+        """Create order from signal"""
         
-        # 确定订单方向
+        # Determine order side
         if signal.direction == SignalDirection.LONG:
             side = OrderSide.BUY
         elif signal.direction == SignalDirection.SHORT:
             side = OrderSide.SELL
         elif signal.direction == SignalDirection.CLOSE:
-            # 平仓需要根据当前持仓方向确定
+            # Close position based on current holding
             position = self.positions.get(signal.symbol)
             if position and position.size > 0:
                 side = OrderSide.SELL if position.side == OrderSide.BUY else OrderSide.BUY
-                size = position.size  # 平仓使用持仓数量
+                size = position.size  # Use position size for closing
             else:
                 logger.warning(f"No position to close for {signal.symbol}")
                 return None
@@ -81,7 +81,7 @@ class OrderManager:
         fee: float = 0,
         error_msg: str = ""
     ):
-        """更新订单状态"""
+        """Update order status"""
         if order_id not in self.orders:
             logger.error(f"Order not found: {order_id}")
             return
@@ -101,7 +101,7 @@ class OrderManager:
         if error_msg:
             order.error_msg = error_msg
         
-        # 处理成交
+        # Handle fill
         if status == OrderStatus.FILLED:
             order.filled_at = datetime.now()
             self.filled_orders += 1
@@ -131,11 +131,11 @@ class OrderManager:
         logger.info(f"Order {order_id} status: {old_status} -> {status}")
     
     def _update_position(self, order: Order):
-        """根据成交更新持仓"""
+        """Update position based on fill"""
         symbol = order.symbol
         
         if symbol not in self.positions:
-            # 新建持仓
+            # Create new position
             if order.side == OrderSide.BUY:
                 self.positions[symbol] = Position(
                     symbol=symbol,
@@ -157,10 +157,10 @@ class OrderManager:
         else:
             position = self.positions[symbol]
             
-            # 同向加仓
+            # Add to position (same direction)
             if (order.side == OrderSide.BUY and position.side == OrderSide.BUY) or \
                (order.side == OrderSide.SELL and position.side == OrderSide.SELL):
-                # 计算新的平均价格
+                # Calculate new average price
                 total_value = position.entry_price * position.size + order.avg_price * order.filled_size
                 new_size = position.size + order.filled_size
                 position.entry_price = total_value / new_size
@@ -168,17 +168,17 @@ class OrderManager:
                 position.updated_at = datetime.now()
                 logger.info(f"Added to position: {symbol} new_size={new_size}")
             
-            # 反向减仓/平仓
+            # Reduce/Close position (opposite direction)
             else:
                 if order.filled_size >= position.size:
-                    # 完全平仓
+                    # Full close
                     pnl = self._calculate_pnl(position, order.avg_price)
                     self.total_pnl += pnl
                     position.realized_pnl += pnl
                     
                     logger.info(f"Closed position: {symbol} PnL={pnl:.2f}")
                     
-                    # 如果有剩余，开反向仓位
+                    # If remaining, open reverse position
                     remaining = order.filled_size - position.size
                     if remaining > 0:
                         position.side = order.side
@@ -188,7 +188,7 @@ class OrderManager:
                     else:
                         del self.positions[symbol]
                 else:
-                    # 部分平仓
+                    # Partial close
                     pnl = self._calculate_pnl(position, order.avg_price, order.filled_size)
                     self.total_pnl += pnl
                     position.realized_pnl += pnl
@@ -197,7 +197,7 @@ class OrderManager:
                     logger.info(f"Reduced position: {symbol} remaining={position.size} PnL={pnl:.2f}")
     
     def _calculate_pnl(self, position: Position, exit_price: float, size: Optional[float] = None) -> float:
-        """计算盈亏"""
+        """Calculate profit/loss"""
         size = size or position.size
         if position.side == OrderSide.BUY:
             return (exit_price - position.entry_price) * size
@@ -205,28 +205,28 @@ class OrderManager:
             return (position.entry_price - exit_price) * size
     
     def update_position_price(self, symbol: str, current_price: float):
-        """更新持仓当前价格"""
+        """Update position current price"""
         if symbol in self.positions:
             self.positions[symbol].update_pnl(current_price)
     
     def get_order(self, order_id: str) -> Optional[Order]:
-        """获取订单"""
+        """Get order by ID"""
         return self.orders.get(order_id)
     
     def get_active_orders(self) -> List[Order]:
-        """获取活跃订单"""
+        """Get active orders"""
         return [o for o in self.orders.values() if o.is_active]
     
     def get_position(self, symbol: str) -> Optional[Position]:
-        """获取持仓"""
+        """Get position by symbol"""
         return self.positions.get(symbol)
     
     def get_all_positions(self) -> List[Position]:
-        """获取所有持仓"""
+        """Get all positions"""
         return list(self.positions.values())
     
     def get_statistics(self) -> Dict:
-        """获取统计数据"""
+        """Get statistics"""
         return {
             "total_orders": self.total_orders,
             "filled_orders": self.filled_orders,

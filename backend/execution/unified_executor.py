@@ -1,6 +1,6 @@
 """
-统一交易执行器
-支持多个交易所/链的统一接口
+Unified trading executor
+Supports a unified interface for multiple exchanges/chains
 """
 
 import asyncio
@@ -11,7 +11,7 @@ from backend.core.logger import get_logger
 from backend.core.config import get_config
 from backend.data.models import Order, OrderStatus, OrderType, OrderSide, Position
 
-# 导入各个执行器
+# Import individual executors
 from backend.execution.binance_futures import BinanceFuturesExecutor
 from backend.execution.hyperliquid_executor import HyperliquidExecutor
 from backend.execution.executor import MockExecutor
@@ -20,47 +20,47 @@ logger = get_logger("unified_executor")
 
 
 class ExecutorType(str, Enum):
-    """执行器类型"""
-    MOCK = "mock"                      # 模拟执行器
-    BINANCE_FUTURES = "binance_futures"  # 币安永续
-    HYPERLIQUID = "hyperliquid"        # Hyperliquid链上
+    """Executor type"""
+    MOCK = "mock"                      # Mock executor
+    BINANCE_FUTURES = "binance_futures"  # Binance Futures
+    HYPERLIQUID = "hyperliquid"        # Hyperliquid on-chain
 
 
 class UnifiedExecutor:
     """
-    统一交易执行器
+    Unified trading executor
     
-    功能：
-    - 支持多个交易所/链的统一接口
-    - 自动路由到对应的执行器
-    - 统一的订单和持仓管理
-    - 跨平台的风险控制
+    Features:
+    - Unified interface for multiple exchanges/chains
+    - Automatic routing to the corresponding executor
+    - Unified order and position management
+    - Cross-platform risk control
     """
     
     def __init__(self):
-        """初始化统一执行器"""
+        """Initialize the unified executor"""
         self.config = get_config()
         
-        # 执行器实例
+        # Executor instances
         self.executors: Dict[ExecutorType, Any] = {}
         
-        # 当前激活的执行器
+        # Currently active executor
         self.active_executor_type: ExecutorType = ExecutorType.MOCK
         
-        # 订单和持仓缓存
+        # Order and position cache
         self._orders: Dict[str, Order] = {}
         self._positions: Dict[str, Position] = {}
         
         logger.info("Unified Executor initialized")
     
     async def initialize(self):
-        """初始化所有执行器"""
+        """Initialize all executors"""
         try:
-            # 1. 初始化模拟执行器（总是可用）
+            # 1. Initialize mock executor (always available)
             self.executors[ExecutorType.MOCK] = MockExecutor()
             logger.info("Mock executor initialized")
             
-            # 2. 初始化币安永续执行器
+            # 2. Initialize Binance Futures executor
             try:
                 binance_config = getattr(self.config, 'binance_futures', {})
                 if isinstance(binance_config, dict) and binance_config.get('enabled', False):
@@ -82,7 +82,7 @@ class UnifiedExecutor:
             except Exception as e:
                 logger.warning(f"Failed to initialize Binance Futures executor: {e}")
             
-            # 3. 初始化Hyperliquid执行器
+            # 3. Initialize Hyperliquid executor
             try:
                 hyperliquid_config = getattr(self.config, 'hyperliquid', {})
                 if isinstance(hyperliquid_config, dict) and hyperliquid_config.get('enabled', False):
@@ -102,7 +102,7 @@ class UnifiedExecutor:
             except Exception as e:
                 logger.warning(f"Failed to initialize Hyperliquid executor: {e}")
             
-            # 4. 设置默认执行器
+            # 4. Set default executor
             trading_config = getattr(self.config, 'trading', None)
             trading_mode = getattr(trading_config, 'mode', 'paper') if trading_config else 'paper'
             
@@ -129,10 +129,10 @@ class UnifiedExecutor:
     
     def set_active_executor(self, executor_type: ExecutorType):
         """
-        设置激活的执行器
+        Set the active executor
         
         Args:
-            executor_type: 执行器类型
+            executor_type: Executor type
         """
         if executor_type not in self.executors:
             logger.error(f"Executor {executor_type} not available")
@@ -143,7 +143,7 @@ class UnifiedExecutor:
         return True
     
     def get_active_executor(self):
-        """获取当前激活的执行器"""
+        """Get the currently active executor"""
         return self.executors.get(self.active_executor_type)
     
     async def place_order(
@@ -157,22 +157,22 @@ class UnifiedExecutor:
         **kwargs
     ) -> Optional[Order]:
         """
-        下单
+        Place an order
         
         Args:
-            symbol: 交易对/资产
-            side: 买卖方向
-            order_type: 订单类型
-            quantity: 数量
-            price: 价格
-            executor_type: 指定执行器（None使用当前激活的）
-            **kwargs: 其他参数
+            symbol: Trading pair/asset
+            side: Buy/sell direction
+            order_type: Order type
+            quantity: Quantity
+            price: Price
+            executor_type: Specified executor (None uses the currently active one)
+            **kwargs: Additional parameters
         
         Returns:
-            订单对象
+            Order object
         """
         try:
-            # 确定使用的执行器
+            # Determine which executor to use
             target_executor_type = executor_type or self.active_executor_type
             executor = self.executors.get(target_executor_type)
             
@@ -180,9 +180,9 @@ class UnifiedExecutor:
                 logger.error(f"Executor {target_executor_type} not available")
                 return None
             
-            # 根据执行器类型调整参数
+            # Adjust parameters based on executor type
             if target_executor_type == ExecutorType.HYPERLIQUID:
-                # Hyperliquid使用资产名称（如BTC）
+                # Hyperliquid uses asset names (e.g. BTC)
                 asset = symbol.replace('/USDT', '').replace('USDT', '')
                 order = await executor.place_order(
                     asset=asset,
@@ -193,7 +193,7 @@ class UnifiedExecutor:
                     **kwargs
                 )
             else:
-                # 其他执行器使用完整交易对
+                # Other executors use full trading pairs
                 order = await executor.place_order(
                     symbol=symbol,
                     side=side,
@@ -220,15 +220,15 @@ class UnifiedExecutor:
         executor_type: Optional[ExecutorType] = None
     ) -> bool:
         """
-        撤单
+        Cancel an order
         
         Args:
-            symbol: 交易对/资产
-            order_id: 订单ID
-            executor_type: 指定执行器
+            symbol: Trading pair/asset
+            order_id: OrderID
+            executor_type: Specified executor
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             target_executor_type = executor_type or self.active_executor_type
@@ -238,7 +238,7 @@ class UnifiedExecutor:
                 logger.error(f"Executor {target_executor_type} not available")
                 return False
             
-            # 根据执行器类型调整参数
+            # Adjust parameters based on executor type
             if target_executor_type == ExecutorType.HYPERLIQUID:
                 asset = symbol.replace('/USDT', '').replace('USDT', '')
                 success = await executor.cancel_order(asset, int(order_id))
@@ -260,14 +260,14 @@ class UnifiedExecutor:
         executor_type: Optional[ExecutorType] = None
     ) -> Optional[Position]:
         """
-        获取持仓
+        Get position
         
         Args:
-            symbol: 交易对/资产
-            executor_type: 指定执行器
+            symbol: Trading pair/asset
+            executor_type: Specified executor
         
         Returns:
-            持仓对象
+            Position object
         """
         try:
             target_executor_type = executor_type or self.active_executor_type
@@ -276,7 +276,7 @@ class UnifiedExecutor:
             if not executor:
                 return None
             
-            # 根据执行器类型调整参数
+            # Adjust parameters based on executor type
             if target_executor_type == ExecutorType.HYPERLIQUID:
                 asset = symbol.replace('/USDT', '').replace('USDT', '')
                 position = await executor.get_position(asset)
@@ -297,13 +297,13 @@ class UnifiedExecutor:
         executor_type: Optional[ExecutorType] = None
     ) -> List[Position]:
         """
-        获取所有持仓
+        Get all positions
         
         Args:
-            executor_type: 指定执行器
+            executor_type: Specified executor
         
         Returns:
-            持仓列表
+            List of positions
         """
         try:
             target_executor_type = executor_type or self.active_executor_type
@@ -329,14 +329,14 @@ class UnifiedExecutor:
         executor_type: Optional[ExecutorType] = None
     ) -> bool:
         """
-        平仓
+        Close a position
         
         Args:
-            symbol: 交易对/资产
-            executor_type: 指定执行器
+            symbol: Trading pair/asset
+            executor_type: Specified executor
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             target_executor_type = executor_type or self.active_executor_type
@@ -345,7 +345,7 @@ class UnifiedExecutor:
             if not executor:
                 return False
             
-            # 根据执行器类型调整参数
+            # Adjust parameters based on executor type
             if target_executor_type == ExecutorType.HYPERLIQUID:
                 asset = symbol.replace('/USDT', '').replace('USDT', '')
                 success = await executor.close_position(asset)
@@ -363,13 +363,13 @@ class UnifiedExecutor:
         executor_type: Optional[ExecutorType] = None
     ) -> Dict[str, Any]:
         """
-        获取账户余额
+        Get account balance
         
         Args:
-            executor_type: 指定执行器
+            executor_type: Specified executor
         
         Returns:
-            余额信息
+            Balance information
         """
         try:
             target_executor_type = executor_type or self.active_executor_type
@@ -386,11 +386,11 @@ class UnifiedExecutor:
             return {}
     
     def get_available_executors(self) -> List[ExecutorType]:
-        """获取可用的执行器列表"""
+        """Get list of available executors"""
         return list(self.executors.keys())
     
     async def close(self):
-        """关闭所有执行器"""
+        """Close all executors"""
         for executor_type, executor in self.executors.items():
             try:
                 if hasattr(executor, 'close'):
@@ -400,13 +400,13 @@ class UnifiedExecutor:
                 logger.error(f"Failed to close executor {executor_type.value}: {e}")
 
 
-# ==================== 全局实例 ====================
+# ==================== Global instance ====================
 
 _unified_executor: Optional[UnifiedExecutor] = None
 
 
 def get_unified_executor() -> UnifiedExecutor:
-    """获取统一执行器实例"""
+    """Get unified executor instance"""
     global _unified_executor
     if _unified_executor is None:
         _unified_executor = UnifiedExecutor()
@@ -414,23 +414,23 @@ def get_unified_executor() -> UnifiedExecutor:
 
 
 async def test_unified_executor():
-    """测试统一执行器"""
+    """Test the unified executor"""
     executor = get_unified_executor()
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         
-        # 查看可用执行器
+        # View available executors
         available = executor.get_available_executors()
         logger.info(f"Available executors: {[e.value for e in available]}")
         
-        # 获取账户余额（所有执行器）
+        # Get account balance (all executors)
         for executor_type in available:
             balance = await executor.get_account_balance(executor_type)
             logger.info(f"Balance ({executor_type.value}): {balance}")
         
-        # 获取所有持仓
+        # Get all positions
         for executor_type in available:
             positions = await executor.get_all_positions(executor_type)
             logger.info(f"Positions ({executor_type.value}): {len(positions)}")

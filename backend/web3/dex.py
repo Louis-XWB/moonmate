@@ -1,6 +1,6 @@
 """
-DEX 数据模块
-获取 Uniswap、PancakeSwap 等 DEX 的价格和流动性数据
+DEX Data Module
+Fetches price and liquidity data from DEXes such as Uniswap, PancakeSwap, etc.
 """
 
 import asyncio
@@ -21,7 +21,7 @@ logger = get_logger("dex")
 
 @dataclass
 class PoolInfo:
-    """流动性池信息"""
+    """Liquidity pool information"""
     address: str
     token0: str
     token1: str
@@ -29,26 +29,25 @@ class PoolInfo:
     token1_symbol: str
     reserve0: int
     reserve1: int
-    fee: int  # 基点，如 30 = 0.3%
+    fee: int  # Basis points, e.g. 30 = 0.3%
     liquidity: int
-    price: float  # token0/token1 价格
+    price: float  # token0/token1 price
     tvl_usd: float
 
 
 @dataclass
 class SwapQuote:
-    """交换报价"""
+    """Swap quote"""
     token_in: str
     token_out: str
     amount_in: int
     amount_out: int
-    price_impact: float  # 百分比
+    price_impact: float  # Percentage
     path: List[str]
     gas_estimate: int
     protocol: str
 
-
-# 常用代币地址
+# Common token addresses
 TOKENS = {
     1: {  # Ethereum
         "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -71,7 +70,7 @@ TOKENS = {
     }
 }
 
-# DEX 路由器地址
+# DEX router addresses
 DEX_ROUTERS = {
     1: {
         "uniswap_v2": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
@@ -90,13 +89,13 @@ DEX_ROUTERS = {
 
 
 class DEXProvider(ABC):
-    """DEX 数据提供者基类"""
-    
+    """DEX data provider base class"""
+
     @abstractmethod
     async def get_price(self, token_in: str, token_out: str) -> float:
-        """获取代币价格"""
+        """Get token price"""
         pass
-    
+
     @abstractmethod
     async def get_quote(
         self,
@@ -104,18 +103,18 @@ class DEXProvider(ABC):
         token_out: str,
         amount_in: int
     ) -> SwapQuote:
-        """获取交换报价"""
+        """Get swap quote"""
         pass
-    
+
     @abstractmethod
     async def get_pool_info(self, pool_address: str) -> PoolInfo:
-        """获取池子信息"""
+        """Get pool information"""
         pass
 
 
 class UniswapV2Provider(DEXProvider):
-    """Uniswap V2 数据提供者"""
-    
+    """Uniswap V2 data provider"""
+
     # Uniswap V2 Factory ABI
     FACTORY_ABI = [
         {
@@ -129,7 +128,7 @@ class UniswapV2Provider(DEXProvider):
             "type": "function"
         }
     ]
-    
+
     # Uniswap V2 Pair ABI
     PAIR_ABI = [
         {
@@ -158,7 +157,7 @@ class UniswapV2Provider(DEXProvider):
             "type": "function"
         }
     ]
-    
+
     # Router ABI
     ROUTER_ABI = [
         {
@@ -172,7 +171,7 @@ class UniswapV2Provider(DEXProvider):
             "type": "function"
         }
     ]
-    
+
     def __init__(
         self,
         chain_id: int = 1,
@@ -181,8 +180,8 @@ class UniswapV2Provider(DEXProvider):
     ):
         self.chain_id = chain_id
         self.provider = get_chain_provider(chain_id)
-        
-        # 默认地址
+
+        # Default addresses
         if chain_id == 1:
             self.factory_address = factory_address or "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
             self.router_address = router_address or DEX_ROUTERS[1]["uniswap_v2"]
@@ -192,9 +191,9 @@ class UniswapV2Provider(DEXProvider):
         else:
             self.factory_address = factory_address
             self.router_address = router_address
-    
+
     async def get_pair_address(self, token_a: str, token_b: str) -> str:
-        """获取交易对地址"""
+        """Get trading pair address"""
         pair = await self.provider.call_contract(
             self.factory_address,
             self.FACTORY_ABI,
@@ -203,58 +202,58 @@ class UniswapV2Provider(DEXProvider):
             Web3.to_checksum_address(token_b)
         )
         return pair
-    
+
     async def get_reserves(self, pair_address: str) -> Tuple[int, int]:
-        """获取储备量"""
+        """Get reserves"""
         reserves = await self.provider.call_contract(
             pair_address,
             self.PAIR_ABI,
             "getReserves"
         )
         return reserves[0], reserves[1]
-    
+
     async def get_price(self, token_in: str, token_out: str) -> float:
-        """获取代币价格"""
+        """Get token price"""
         try:
             pair_address = await self.get_pair_address(token_in, token_out)
-            
+
             if pair_address == "0x" + "0" * 40:
                 logger.warning(f"Pair not found: {token_in} / {token_out}")
                 return 0
-            
+
             reserve0, reserve1 = await self.get_reserves(pair_address)
-            
-            # 获取 token0 地址确定顺序
+
+            # Get token0 address to determine ordering
             token0 = await self.provider.call_contract(
                 pair_address,
                 self.PAIR_ABI,
                 "token0"
             )
-            
+
             if token_in.lower() == token0.lower():
                 price = reserve1 / reserve0 if reserve0 > 0 else 0
             else:
                 price = reserve0 / reserve1 if reserve1 > 0 else 0
-            
+
             return price
-            
+
         except Exception as e:
             logger.error(f"Failed to get price: {e}")
             return 0
-    
+
     async def get_quote(
         self,
         token_in: str,
         token_out: str,
         amount_in: int
     ) -> SwapQuote:
-        """获取交换报价"""
+        """Get swap quote"""
         try:
             path = [
                 Web3.to_checksum_address(token_in),
                 Web3.to_checksum_address(token_out)
             ]
-            
+
             amounts = await self.provider.call_contract(
                 self.router_address,
                 self.ROUTER_ABI,
@@ -262,17 +261,17 @@ class UniswapV2Provider(DEXProvider):
                 amount_in,
                 path
             )
-            
+
             amount_out = amounts[-1]
-            
-            # 计算价格影响
+
+            # Calculate price impact
             spot_price = await self.get_price(token_in, token_out)
             if spot_price > 0 and amount_in > 0:
                 effective_price = amount_out / amount_in
                 price_impact = abs(effective_price - spot_price) / spot_price * 100
             else:
                 price_impact = 0
-            
+
             return SwapQuote(
                 token_in=token_in,
                 token_out=token_out,
@@ -283,33 +282,33 @@ class UniswapV2Provider(DEXProvider):
                 gas_estimate=150000,
                 protocol="uniswap_v2"
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to get quote: {e}")
             raise
-    
+
     async def get_pool_info(self, pool_address: str) -> PoolInfo:
-        """获取池子信息"""
+        """Get pool information"""
         pool_address = Web3.to_checksum_address(pool_address)
-        
-        # 获取代币地址
+
+        # Get token addresses
         token0 = await self.provider.call_contract(
             pool_address, self.PAIR_ABI, "token0"
         )
         token1 = await self.provider.call_contract(
             pool_address, self.PAIR_ABI, "token1"
         )
-        
-        # 获取储备量
+
+        # Get reserves
         reserve0, reserve1 = await self.get_reserves(pool_address)
-        
-        # 获取代币信息
+
+        # Get token information
         token0_info = await self.provider.get_token_info(token0)
         token1_info = await self.provider.get_token_info(token1)
-        
-        # 计算价格
+
+        # Calculate price
         price = reserve1 / reserve0 if reserve0 > 0 else 0
-        
+
         return PoolInfo(
             address=pool_address,
             token0=token0,
@@ -318,21 +317,21 @@ class UniswapV2Provider(DEXProvider):
             token1_symbol=token1_info["symbol"],
             reserve0=reserve0,
             reserve1=reserve1,
-            fee=30,  # Uniswap V2 固定 0.3%
-            liquidity=0,  # V2 没有集中流动性
+            fee=30,  # Uniswap V2 fixed 0.3%
+            liquidity=0,  # V2 does not have concentrated liquidity
             price=price,
-            tvl_usd=0  # 需要额外计算
+            tvl_usd=0  # Requires additional calculation
         )
 
 
 class DEXAggregator:
-    """DEX 聚合器 - 从多个 DEX 获取最优价格"""
-    
+    """DEX Aggregator - fetches the best price from multiple DEXes"""
+
     def __init__(self, chain_id: int = 1):
         self.chain_id = chain_id
         self.providers: Dict[str, DEXProvider] = {}
-        
-        # 初始化提供者
+
+        # Initialize providers
         if chain_id == 1:
             self.providers["uniswap_v2"] = UniswapV2Provider(chain_id)
         elif chain_id == 56:
@@ -341,11 +340,11 @@ class DEXAggregator:
                 factory_address="0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
                 router_address=DEX_ROUTERS[56]["pancakeswap_v2"]
             )
-    
+
     async def get_best_price(self, token_in: str, token_out: str) -> Dict[str, Any]:
-        """获取最优价格"""
+        """Get the best price"""
         results = {}
-        
+
         for name, provider in self.providers.items():
             try:
                 price = await provider.get_price(token_in, token_out)
@@ -353,28 +352,28 @@ class DEXAggregator:
                     results[name] = price
             except Exception as e:
                 logger.error(f"Failed to get price from {name}: {e}")
-        
+
         if not results:
             return {"best_price": 0, "best_dex": None, "all_prices": {}}
-        
+
         best_dex = max(results, key=results.get)
-        
+
         return {
             "best_price": results[best_dex],
             "best_dex": best_dex,
             "all_prices": results
         }
-    
+
     async def get_best_quote(
         self,
         token_in: str,
         token_out: str,
         amount_in: int
     ) -> Optional[SwapQuote]:
-        """获取最优报价"""
+        """Get the best quote"""
         best_quote = None
         best_amount_out = 0
-        
+
         for name, provider in self.providers.items():
             try:
                 quote = await provider.get_quote(token_in, token_out, amount_in)
@@ -383,66 +382,66 @@ class DEXAggregator:
                     best_quote = quote
             except Exception as e:
                 logger.error(f"Failed to get quote from {name}: {e}")
-        
+
         return best_quote
 
 
 class OnChainDataProvider:
-    """链上数据提供者 - 整合 DEX 价格和链上事件"""
-    
+    """On-chain data provider - integrates DEX prices and on-chain events"""
+
     def __init__(self, chain_id: int = 1):
         self.chain_id = chain_id
         self.chain = get_chain_provider(chain_id)
         self.dex = DEXAggregator(chain_id)
         self._price_cache: Dict[str, Tuple[float, datetime]] = {}
-        self._cache_ttl = 10  # 10秒缓存
-    
+        self._cache_ttl = 10  # 10-second cache
+
     async def get_token_price_usd(self, token_address: str) -> float:
-        """获取代币 USD 价格"""
-        # 检查缓存
+        """Get token USD price"""
+        # Check cache
         cache_key = f"{token_address}_usd"
         if cache_key in self._price_cache:
             price, cached_at = self._price_cache[cache_key]
             if (datetime.now() - cached_at).seconds < self._cache_ttl:
                 return price
-        
-        # 获取稳定币地址
+
+        # Get stablecoin addresses
         stables = TOKENS.get(self.chain_id, {})
         usdc = stables.get("USDC")
         usdt = stables.get("USDT")
-        
+
         if not usdc and not usdt:
             return 0
-        
-        # 尝试获取价格
+
+        # Try to get price
         price = 0
         if usdc:
             result = await self.dex.get_best_price(token_address, usdc)
             price = result.get("best_price", 0)
-        
+
         if price == 0 and usdt:
             result = await self.dex.get_best_price(token_address, usdt)
             price = result.get("best_price", 0)
-        
-        # 缓存结果
+
+        # Cache result
         self._price_cache[cache_key] = (price, datetime.now())
-        
+
         return price
-    
+
     async def get_eth_price_usd(self) -> float:
-        """获取 ETH/BNB 等原生代币 USD 价格"""
+        """Get native token (ETH/BNB/etc.) USD price"""
         weth = TOKENS.get(self.chain_id, {}).get("WETH") or TOKENS.get(self.chain_id, {}).get("WBNB") or TOKENS.get(self.chain_id, {}).get("WMATIC")
-        
+
         if weth:
             return await self.get_token_price_usd(weth)
         return 0
-    
+
     async def get_wallet_portfolio(self, address: str) -> Dict[str, Any]:
-        """获取钱包组合"""
-        # 获取原生代币余额
+        """Get wallet portfolio"""
+        # Get native token balance
         native_balance = await self.chain.get_balance_ether(address)
         native_price = await self.get_eth_price_usd()
-        
+
         portfolio = {
             "address": address,
             "chain_id": self.chain_id,
@@ -451,23 +450,23 @@ class OnChainDataProvider:
             "tokens": [],
             "total_value_usd": native_balance * native_price
         }
-        
-        # 获取常用代币余额
+
+        # Get common token balances
         tokens = TOKENS.get(self.chain_id, {})
         for symbol, token_address in tokens.items():
-            if symbol.startswith("W"):  # 跳过 wrapped 原生代币
+            if symbol.startswith("W"):  # Skip wrapped native tokens
                 continue
-            
+
             try:
                 balance = await self.chain.get_token_balance(address, token_address)
                 if balance > 0:
                     token_info = await self.chain.get_token_info(token_address)
                     decimals = token_info["decimals"]
                     balance_formatted = balance / (10 ** decimals)
-                    
+
                     price = await self.get_token_price_usd(token_address)
                     value_usd = balance_formatted * price
-                    
+
                     portfolio["tokens"].append({
                         "symbol": symbol,
                         "address": token_address,
@@ -478,5 +477,5 @@ class OnChainDataProvider:
                     portfolio["total_value_usd"] += value_usd
             except Exception as e:
                 logger.error(f"Failed to get balance for {symbol}: {e}")
-        
+
         return portfolio

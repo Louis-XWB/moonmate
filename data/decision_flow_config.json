@@ -120,7 +120,7 @@
         },
         {
           "id": "bollinger",
-          "name": "布林带",
+          "name": "Bollinger Bands",
           "enabled": true,
           "status": "idle"
         },
@@ -132,7 +132,7 @@
         },
         {
           "id": "volume",
-          "name": "成交量",
+          "name": "Volume",
           "enabled": true,
           "status": "idle"
         }
@@ -151,31 +151,31 @@
       "sub_nodes": [
         {
           "id": "conservative",
-          "name": "保守派",
+          "name": "Conservative",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "aggressive",
-          "name": "激进派",
+          "name": "Aggressive",
           "enabled": false,
           "status": "idle"
         },
         {
           "id": "technical",
-          "name": "技术派",
+          "name": "Technical",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "fundamental",
-          "name": "基本面派",
+          "name": "Fundamental",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "risk_manager",
-          "name": "风险管理",
+          "name": "Risk Manager",
           "enabled": false,
           "status": "idle"
         }
@@ -200,19 +200,19 @@
       "sub_nodes": [
         {
           "id": "vibe_vibe_1_1769571489",
-          "name": "我偏好做多，不喜欢做空",
+          "name": "I prefer long positions and dislike shorting",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "vibe_vibe_2_1769571550",
-          "name": "只在美股开盘时间交易",
+          "name": "Only trade during US stock market hours",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "vibe_vibe_3_1769572083",
-          "name": "如果波动超过2个点，暂停交易，继续观察",
+          "name": "If volatility exceeds 2%, pause trading and continue observing",
           "enabled": true,
           "status": "idle"
         }
@@ -225,25 +225,25 @@
       "sub_nodes": [
         {
           "id": "position_limit",
-          "name": "仓位限制",
+          "name": "Position Limit",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "stop_loss",
-          "name": "止损",
+          "name": "Stop Loss",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "take_profit",
-          "name": "止盈",
+          "name": "Take Profit",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "circuit_breaker",
-          "name": "熔断",
+          "name": "Circuit Breaker",
           "enabled": true,
           "status": "idle"
         }

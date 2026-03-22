@@ -1,13 +1,13 @@
 """
-交易执行器测试脚本
-测试币安永续和Hyperliquid执行器
+Trade executor test script
+Tests Binance perpetual futures and Hyperliquid executors
 """
 
 import asyncio
 import sys
 import os
 
-# 添加项目路径
+# Add project path
 sys.path.insert(0, '/home/ubuntu/auto-trading-agent')
 
 from backend.core.logger import get_logger
@@ -18,7 +18,7 @@ logger = get_logger("test_executors")
 
 
 async def test_mock_executor():
-    """测试模拟执行器"""
+    """Test mock executor"""
     logger.info("=" * 60)
     logger.info("Testing Mock Executor")
     logger.info("=" * 60)
@@ -27,14 +27,14 @@ async def test_mock_executor():
     await executor.initialize()
     
     try:
-        # 设置为模拟模式
+        # Set to simulation mode
         executor.set_active_executor(ExecutorType.MOCK)
         
-        # 获取账户余额
+        # GetAccount balance
         balance = await executor.get_account_balance()
         logger.info(f"✓ Account Balance: {balance}")
         
-        # 下单测试
+        # Place order test
         order = await executor.place_order(
             symbol="BTC/USDT",
             side=OrderSide.BUY,
@@ -48,7 +48,7 @@ async def test_mock_executor():
         else:
             logger.error("✗ Failed to place order")
         
-        # 获取持仓
+        # GetPosition
         positions = await executor.get_all_positions()
         logger.info(f"✓ Positions: {len(positions)}")
         
@@ -61,12 +61,12 @@ async def test_mock_executor():
 
 
 async def test_binance_futures_executor():
-    """测试币安永续执行器"""
+    """Test Binance perpetual futures executor"""
     logger.info("=" * 60)
     logger.info("Testing Binance Futures Executor")
     logger.info("=" * 60)
     
-    # 检查环境变量
+    # Check environment variables
     api_key = os.getenv('BINANCE_API_KEY', '')
     api_secret = os.getenv('BINANCE_API_SECRET', '')
     
@@ -85,15 +85,15 @@ async def test_binance_futures_executor():
     )
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         logger.info("✓ Executor Initialized")
         
-        # 获取账户余额
+        # GetAccount balance
         balance = await executor.get_account_balance()
         logger.info(f"✓ Account Balance: ${balance.get('total_balance', 0):.2f}")
         
-        # 获取持仓
+        # GetPosition
         positions = await executor.get_all_positions()
         logger.info(f"✓ Current Positions: {len(positions)}")
         
@@ -109,12 +109,12 @@ async def test_binance_futures_executor():
 
 
 async def test_hyperliquid_executor():
-    """测试Hyperliquid执行器"""
+    """Test Hyperliquid executor"""
     logger.info("=" * 60)
     logger.info("Testing Hyperliquid Executor")
     logger.info("=" * 60)
     
-    # 检查环境变量
+    # Check environment variables
     private_key = os.getenv('HYPERLIQUID_PRIVATE_KEY', '')
     
     if not private_key:
@@ -131,24 +131,24 @@ async def test_hyperliquid_executor():
     )
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         logger.info("✓ Executor Initialized")
         logger.info(f"  Address: {executor.address}")
         
-        # 获取账户余额
+        # GetAccount balance
         balance = await executor.get_account_balance()
         logger.info(f"✓ Account Balance: ${balance.get('account_value', 0):.2f}")
         logger.info(f"  Withdrawable: ${balance.get('withdrawable', 0):.2f}")
         
-        # 获取持仓
+        # GetPosition
         positions = await executor.get_all_positions()
         logger.info(f"✓ Current Positions: {len(positions)}")
         
         for pos in positions:
             logger.info(f"  - {pos.symbol}: {pos.quantity} @ ${pos.entry_price}")
         
-        # 获取未成交订单
+        # GetUnfilledOrder
         open_orders = await executor.get_open_orders()
         logger.info(f"✓ Open Orders: {len(open_orders)}")
         
@@ -159,7 +159,7 @@ async def test_hyperliquid_executor():
 
 
 async def test_unified_executor():
-    """测试统一执行器"""
+    """Test unified executor"""
     logger.info("=" * 60)
     logger.info("Testing Unified Executor")
     logger.info("=" * 60)
@@ -167,23 +167,23 @@ async def test_unified_executor():
     executor = UnifiedExecutor()
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         logger.info("✓ Unified Executor Initialized")
         
-        # 查看可用执行器
+        # View available executors
         available = executor.get_available_executors()
         logger.info(f"✓ Available Executors: {[e.value for e in available]}")
         
-        # 测试每个可用执行器
+        # Test each available executor
         for executor_type in available:
             logger.info(f"\n--- Testing {executor_type.value} ---")
             
-            # 获取账户余额
+            # GetAccount balance
             balance = await executor.get_account_balance(executor_type)
             logger.info(f"✓ Balance: {balance}")
             
-            # 获取持仓
+            # GetPosition
             positions = await executor.get_all_positions(executor_type)
             logger.info(f"✓ Positions: {len(positions)}")
         
@@ -196,27 +196,27 @@ async def test_unified_executor():
 
 
 async def main():
-    """主测试函数"""
+    """Main test function"""
     logger.info("=" * 60)
     logger.info("Auto Trading Agent - Executor Tests")
     logger.info("=" * 60)
     
-    # 1. 测试模拟执行器
+    # 1. Test mock executor
     await test_mock_executor()
     
     print("\n")
     
-    # 2. 测试币安永续执行器
+    # 2. Test Binance perpetual futures executor
     await test_binance_futures_executor()
     
     print("\n")
     
-    # 3. 测试Hyperliquid执行器
+    # 3. Test Hyperliquid executor
     await test_hyperliquid_executor()
     
     print("\n")
     
-    # 4. 测试统一执行器
+    # 4. Test unified executor
     await test_unified_executor()
     
     logger.info("\n" + "=" * 60)

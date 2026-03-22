@@ -1,6 +1,6 @@
 """
-数据提供者模块
-支持多数据源接入，提供统一的数据访问接口
+Data providermodule
+Supports multiple data source integration with a unified data access interface
 """
 
 import asyncio
@@ -14,21 +14,21 @@ from .models import Ticker, OrderBook, OrderBookLevel, Trade, Kline
 
 
 class DataProvider(ABC):
-    """数据提供者基类"""
+    """Data provider base class"""
     
     @abstractmethod
     async def get_ticker(self, symbol: str) -> Ticker:
-        """获取行情快照"""
+        """GetMarket ticker snapshot"""
         pass
     
     @abstractmethod
     async def get_orderbook(self, symbol: str, depth: int = 20) -> OrderBook:
-        """获取订单簿"""
+        """GetOrderbook"""
         pass
     
     @abstractmethod
     async def get_trades(self, symbol: str, limit: int = 100) -> List[Trade]:
-        """获取最近成交"""
+        """Get recent trades"""
         pass
     
     @abstractmethod
@@ -40,26 +40,26 @@ class DataProvider(ABC):
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
     ) -> List[Kline]:
-        """获取K线数据"""
+        """GetCandlestick data"""
         pass
     
     @abstractmethod
     async def subscribe_ticker(self, symbol: str, callback: Callable):
-        """订阅行情更新"""
+        """Subscribe to market data updates"""
         pass
     
     @abstractmethod
     async def unsubscribe_ticker(self, symbol: str):
-        """取消订阅"""
+        """Unsubscribe from event"""
         pass
 
 
 class OKXDataProvider(DataProvider):
-    """OKX 真实数据提供者"""
+    """OKX Real Data Provider"""
     
     BASE_URL = "https://www.okx.com/api/v5"
     
-    # 符号映射：内部格式 -> OKX格式
+    # Symbol mapping: internal format -> OKX format
     SYMBOL_MAP = {
         "BTC/USDT": "BTC-USDT",
         "ETH/USDT": "ETH-USDT",
@@ -67,7 +67,7 @@ class OKXDataProvider(DataProvider):
         "BNB/USDT": "BNB-USDT",
     }
     
-    # 时间周期映射
+    # Time period mapping
     INTERVAL_MAP = {
         "1m": "1m",
         "5m": "5m",
@@ -84,24 +84,24 @@ class OKXDataProvider(DataProvider):
         self._session: Optional[aiohttp.ClientSession] = None
         self._ticker_cache: Dict[str, Ticker] = {}
         self._cache_time: Dict[str, datetime] = {}
-        self._cache_ttl = 1  # 缓存1秒
+        self._cache_ttl = 1  # Cache for 1 second
     
     def _get_okx_symbol(self, symbol: str) -> str:
-        """转换为OKX符号格式"""
+        """Convert to OKX symbol format"""
         return self.SYMBOL_MAP.get(symbol, symbol.replace("/", "-"))
     
     def _get_okx_interval(self, interval: str) -> str:
-        """转换为OKX时间周期格式"""
+        """Convert to OKX time period format"""
         return self.INTERVAL_MAP.get(interval, "1H")
     
     async def _get_session(self) -> aiohttp.ClientSession:
-        """获取HTTP会话"""
+        """Get HTTP session"""
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
         return self._session
     
     async def _request(self, endpoint: str, params: dict = None) -> dict:
-        """发送API请求"""
+        """Send API request"""
         session = await self._get_session()
         url = f"{self.BASE_URL}{endpoint}"
         
@@ -117,8 +117,8 @@ class OKXDataProvider(DataProvider):
             raise Exception(f"OKX API request failed: {str(e)}")
     
     async def get_ticker(self, symbol: str) -> Ticker:
-        """获取行情快照"""
-        # 检查缓存
+        """GetMarket ticker snapshot"""
+        # Check cache
         now = datetime.now()
         if symbol in self._ticker_cache:
             cache_age = (now - self._cache_time.get(symbol, now)).total_seconds()
@@ -147,14 +147,14 @@ class OKXDataProvider(DataProvider):
             timestamp=datetime.fromtimestamp(int(ticker_data["ts"]) / 1000)
         )
         
-        # 更新缓存
+        # Update cache
         self._ticker_cache[symbol] = ticker
         self._cache_time[symbol] = now
         
         return ticker
     
     async def get_orderbook(self, symbol: str, depth: int = 20) -> OrderBook:
-        """获取订单簿"""
+        """GetOrderbook"""
         okx_symbol = self._get_okx_symbol(symbol)
         data = await self._request("/market/books", {"instId": okx_symbol, "sz": str(depth)})
         
@@ -181,7 +181,7 @@ class OKXDataProvider(DataProvider):
         )
     
     async def get_trades(self, symbol: str, limit: int = 100) -> List[Trade]:
-        """获取最近成交"""
+        """Get recent trades"""
         okx_symbol = self._get_okx_symbol(symbol)
         data = await self._request("/market/trades", {"instId": okx_symbol, "limit": str(min(limit, 500))})
         
@@ -210,7 +210,7 @@ class OKXDataProvider(DataProvider):
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
     ) -> List[Kline]:
-        """获取K线数据"""
+        """GetCandlestick data"""
         okx_symbol = self._get_okx_symbol(symbol)
         okx_interval = self._get_okx_interval(interval)
         
@@ -232,7 +232,7 @@ class OKXDataProvider(DataProvider):
         
         klines = []
         for kline_data in data["data"]:
-            # OKX K线格式: [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm]
+            # OKX candlestick format: [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm]
             kline = Kline(
                 symbol=symbol,
                 interval=interval,
@@ -248,11 +248,11 @@ class OKXDataProvider(DataProvider):
             )
             klines.append(kline)
         
-        # OKX返回的是倒序，需要反转
+        # OKX returns in reverse order, needs reversal
         return list(reversed(klines))
     
     async def subscribe_ticker(self, symbol: str, callback: Callable):
-        """订阅行情更新"""
+        """Subscribe to market data updates"""
         if symbol not in self._subscribers:
             self._subscribers[symbol] = []
         self._subscribers[symbol].append(callback)
@@ -262,12 +262,12 @@ class OKXDataProvider(DataProvider):
             asyncio.create_task(self._ticker_loop())
     
     async def unsubscribe_ticker(self, symbol: str):
-        """取消订阅"""
+        """Unsubscribe from event"""
         if symbol in self._subscribers:
             del self._subscribers[symbol]
     
     async def _ticker_loop(self):
-        """行情推送循环"""
+        """Market data push loop"""
         while self._running and self._subscribers:
             for symbol, callbacks in list(self._subscribers.items()):
                 try:
@@ -280,24 +280,24 @@ class OKXDataProvider(DataProvider):
                 except Exception as e:
                     print(f"Ticker loop error for {symbol}: {e}")
             
-            await asyncio.sleep(2)  # 每2秒更新一次，避免频率过高
+            await asyncio.sleep(2)  # Update every 2 seconds to avoid excessive frequency
     
     def stop(self):
-        """停止数据推送"""
+        """Stop data push"""
         self._running = False
     
     async def close(self):
-        """关闭会话"""
+        """Close session"""
         if self._session and not self._session.closed:
             await self._session.close()
 
 
 class CoinGeckoDataProvider(DataProvider):
-    """CoinGecko 数据提供者（备用）"""
+    """CoinGecko Data Provider (fallback)"""
     
     BASE_URL = "https://api.coingecko.com/api/v3"
     
-    # 符号映射：内部格式 -> CoinGecko ID
+    # Symbol mapping: internal format -> CoinGecko ID
     SYMBOL_MAP = {
         "BTC/USDT": "bitcoin",
         "ETH/USDT": "ethereum",
@@ -311,20 +311,20 @@ class CoinGeckoDataProvider(DataProvider):
         self._session: Optional[aiohttp.ClientSession] = None
         self._ticker_cache: Dict[str, Ticker] = {}
         self._cache_time: Dict[str, datetime] = {}
-        self._cache_ttl = 10  # CoinGecko 限制较严，缓存10秒
+        self._cache_ttl = 10  # CoinGecko has strict rate limits, cache for 10 seconds
     
     def _get_coin_id(self, symbol: str) -> str:
-        """转换为CoinGecko ID"""
+        """Convert to CoinGecko ID"""
         return self.SYMBOL_MAP.get(symbol, symbol.split("/")[0].lower())
     
     async def _get_session(self) -> aiohttp.ClientSession:
-        """获取HTTP会话"""
+        """Get HTTP session"""
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
         return self._session
     
     async def _request(self, endpoint: str, params: dict = None) -> dict:
-        """发送API请求"""
+        """Send API request"""
         session = await self._get_session()
         url = f"{self.BASE_URL}{endpoint}"
         
@@ -339,8 +339,8 @@ class CoinGeckoDataProvider(DataProvider):
             raise Exception(f"CoinGecko API request failed: {str(e)}")
     
     async def get_ticker(self, symbol: str) -> Ticker:
-        """获取行情快照"""
-        # 检查缓存
+        """GetMarket ticker snapshot"""
+        # Check cache
         now = datetime.now()
         if symbol in self._ticker_cache:
             cache_age = (now - self._cache_time.get(symbol, now)).total_seconds()
@@ -366,7 +366,7 @@ class CoinGeckoDataProvider(DataProvider):
         ticker = Ticker(
             symbol=symbol,
             last_price=price,
-            bid_price=price * 0.9999,  # CoinGecko 不提供买卖价，模拟
+            bid_price=price * 0.9999,  # CoinGecko doesn't provide bid/ask, simulated
             ask_price=price * 1.0001,
             bid_size=0,
             ask_size=0,
@@ -377,14 +377,14 @@ class CoinGeckoDataProvider(DataProvider):
             timestamp=now
         )
         
-        # 更新缓存
+        # Update cache
         self._ticker_cache[symbol] = ticker
         self._cache_time[symbol] = now
         
         return ticker
     
     async def get_orderbook(self, symbol: str, depth: int = 20) -> OrderBook:
-        """CoinGecko不提供订单簿，返回模拟数据"""
+        """CoinGecko doesn't provide orderbook, return mock data"""
         ticker = await self.get_ticker(symbol)
         price = ticker.last_price
         spread = price * 0.0002
@@ -406,7 +406,7 @@ class CoinGeckoDataProvider(DataProvider):
         )
     
     async def get_trades(self, symbol: str, limit: int = 100) -> List[Trade]:
-        """CoinGecko不提供成交记录，返回空列表"""
+        """CoinGecko doesn't provide trade records, return empty list"""
         return []
     
     async def get_klines(
@@ -417,11 +417,11 @@ class CoinGeckoDataProvider(DataProvider):
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
     ) -> List[Kline]:
-        """获取K线数据"""
+        """GetCandlestick data"""
         coin_id = self._get_coin_id(symbol)
         
-        # 根据limit计算天数
-        days = min(max(limit // 24, 2), 90)  # 2-90天
+        # Calculate days based on limit
+        days = min(max(limit // 24, 2), 90)  # 2-90 days
         
         data = await self._request(f"/coins/{coin_id}/market_chart", {
             "vs_currency": "usd",
@@ -457,7 +457,7 @@ class CoinGeckoDataProvider(DataProvider):
         return klines[-limit:]
     
     async def subscribe_ticker(self, symbol: str, callback: Callable):
-        """订阅行情更新"""
+        """Subscribe to market data updates"""
         if symbol not in self._subscribers:
             self._subscribers[symbol] = []
         self._subscribers[symbol].append(callback)
@@ -467,12 +467,12 @@ class CoinGeckoDataProvider(DataProvider):
             asyncio.create_task(self._ticker_loop())
     
     async def unsubscribe_ticker(self, symbol: str):
-        """取消订阅"""
+        """Unsubscribe from event"""
         if symbol in self._subscribers:
             del self._subscribers[symbol]
     
     async def _ticker_loop(self):
-        """行情推送循环"""
+        """Market data push loop"""
         while self._running and self._subscribers:
             for symbol, callbacks in list(self._subscribers.items()):
                 try:
@@ -485,24 +485,24 @@ class CoinGeckoDataProvider(DataProvider):
                 except Exception as e:
                     print(f"Ticker loop error for {symbol}: {e}")
             
-            await asyncio.sleep(15)  # CoinGecko限制较严，15秒更新一次
+            await asyncio.sleep(15)  # CoinGecko has strict rate limits, update every 15 seconds
     
     def stop(self):
-        """停止数据推送"""
+        """Stop data push"""
         self._running = False
     
     async def close(self):
-        """关闭会话"""
+        """Close session"""
         if self._session and not self._session.closed:
             await self._session.close()
 
 
 class MockDataProvider(DataProvider):
-    """模拟数据提供者（用于测试和演示，当真实API不可用时降级使用）"""
+    """Mock data provider (for testing and demo, fallback when real API is unavailable)"""
     
     def __init__(self):
         self._base_prices: Dict[str, float] = {
-            "BTC/USDT": 88000.0,  # 更新为接近真实的价格
+            "BTC/USDT": 88000.0,  # Updated to near-real prices
             "ETH/USDT": 2900.0,
             "SOL/USDT": 125.0,
             "BNB/USDT": 600.0,
@@ -510,14 +510,14 @@ class MockDataProvider(DataProvider):
         self._price_history: Dict[str, List[float]] = {}
         self._subscribers: Dict[str, List[Callable]] = {}
         self._running: bool = False
-        self._volatility: float = 0.001  # 0.1% 波动率
+        self._volatility: float = 0.001  # 0.1% Volatility
         
-        # 初始化价格历史
+        # Initialize price history
         for symbol in self._base_prices:
             self._init_price_history(symbol)
     
     def _init_price_history(self, symbol: str, length: int = 500):
-        """初始化价格历史"""
+        """Initialize price history"""
         base_price = self._base_prices.get(symbol, 100.0)
         prices = [base_price]
         
@@ -531,7 +531,7 @@ class MockDataProvider(DataProvider):
         self._price_history[symbol] = prices
     
     def _get_current_price(self, symbol: str) -> float:
-        """获取当前价格（带随机波动）"""
+        """Get current price (with random volatility)"""
         if symbol not in self._price_history:
             self._init_price_history(symbol)
         
@@ -548,7 +548,7 @@ class MockDataProvider(DataProvider):
         return new_price
     
     async def get_ticker(self, symbol: str) -> Ticker:
-        """获取行情快照"""
+        """GetMarket ticker snapshot"""
         price = self._get_current_price(symbol)
         spread = price * 0.0001
         
@@ -571,7 +571,7 @@ class MockDataProvider(DataProvider):
         )
     
     async def get_orderbook(self, symbol: str, depth: int = 20) -> OrderBook:
-        """获取订单簿"""
+        """GetOrderbook"""
         price = self._get_current_price(symbol)
         spread = price * 0.0001
         
@@ -594,7 +594,7 @@ class MockDataProvider(DataProvider):
         )
     
     async def get_trades(self, symbol: str, limit: int = 100) -> List[Trade]:
-        """获取最近成交"""
+        """Get recent trades"""
         price = self._get_current_price(symbol)
         trades = []
         
@@ -620,7 +620,7 @@ class MockDataProvider(DataProvider):
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None
     ) -> List[Kline]:
-        """获取K线数据"""
+        """GetCandlestick data"""
         interval_minutes = {
             "1m": 1, "5m": 5, "15m": 15, "30m": 30,
             "1h": 60, "4h": 240, "1d": 1440
@@ -664,7 +664,7 @@ class MockDataProvider(DataProvider):
         return list(reversed(klines))
     
     async def subscribe_ticker(self, symbol: str, callback: Callable):
-        """订阅行情更新"""
+        """Subscribe to market data updates"""
         if symbol not in self._subscribers:
             self._subscribers[symbol] = []
         self._subscribers[symbol].append(callback)
@@ -674,12 +674,12 @@ class MockDataProvider(DataProvider):
             asyncio.create_task(self._ticker_loop())
     
     async def unsubscribe_ticker(self, symbol: str):
-        """取消订阅"""
+        """Unsubscribe from event"""
         if symbol in self._subscribers:
             del self._subscribers[symbol]
     
     async def _ticker_loop(self):
-        """行情推送循环"""
+        """Market data push loop"""
         while self._running and self._subscribers:
             for symbol, callbacks in list(self._subscribers.items()):
                 try:
@@ -695,5 +695,5 @@ class MockDataProvider(DataProvider):
             await asyncio.sleep(1)
     
     def stop(self):
-        """停止数据推送"""
+        """Stop data push"""
         self._running = False

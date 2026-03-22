@@ -1,6 +1,6 @@
 """
-回测引擎
-支持历史数据回测和策略评估
+Backtest engine
+Supports historical data backtesting and strategy evaluation
 """
 
 import asyncio
@@ -19,7 +19,7 @@ logger = get_logger("backtest")
 
 
 class Trade(BaseModel):
-    """回测交易记录"""
+    """Backtest trade record"""
     timestamp: datetime
     symbol: str
     side: str
@@ -31,7 +31,7 @@ class Trade(BaseModel):
 
 
 class BacktestResult(BaseModel):
-    """回测结果"""
+    """Backtest result"""
     symbol: str
     strategy: str
     start_time: datetime
@@ -39,19 +39,19 @@ class BacktestResult(BaseModel):
     initial_balance: float
     final_balance: float
     
-    # 收益指标
+    # ProfitIndicator
     total_return: float = 0
     total_return_pct: float = 0
     annualized_return: float = 0
     
-    # 风险指标
+    # Risk indicators
     max_drawdown: float = 0
     max_drawdown_pct: float = 0
     sharpe_ratio: float = 0
     sortino_ratio: float = 0
     calmar_ratio: float = 0
     
-    # 交易统计
+    # Trade statistics
     total_trades: int = 0
     winning_trades: int = 0
     losing_trades: int = 0
@@ -60,18 +60,18 @@ class BacktestResult(BaseModel):
     avg_loss: float = 0
     profit_factor: float = 0
     
-    # 其他指标
+    # Other indicators
     total_fees: float = 0
-    avg_holding_period: float = 0  # 小时
+    avg_holding_period: float = 0  # hours
     
-    # 详细数据
+    # Detailed data
     trades: List[Trade] = Field(default_factory=list)
     equity_curve: List[float] = Field(default_factory=list)
     drawdown_curve: List[float] = Field(default_factory=list)
 
 
 class BacktestEngine:
-    """回测引擎"""
+    """Backtest engine"""
     
     def __init__(
         self,
@@ -95,27 +95,27 @@ class BacktestEngine:
         klines: List[Kline],
         order_size: float = 100
     ) -> BacktestResult:
-        """运行回测"""
+        """RunningBacktest"""
         
         logger.info(f"Starting backtest: {symbol} with {strategy.name}")
         logger.info(f"Data range: {klines[0].open_time} to {klines[-1].close_time}")
         logger.info(f"Total bars: {len(klines)}")
         
-        # 重置状态
+        # Reset status
         self.balance = self.initial_balance
         self.position = None
         self.trades = []
         self.equity_curve = [self.initial_balance]
         
-        # 需要足够的历史数据
+        # Need sufficient historical data
         lookback = 50
         
         for i in range(lookback, len(klines)):
-            # 获取历史数据
+            # Get historical data
             history = klines[max(0, i-lookback):i+1]
             current_kline = klines[i]
             
-            # 创建模拟Ticker
+            # Create simulated ticker
             ticker = Ticker(
                 symbol=symbol,
                 last_price=current_kline.close,
@@ -128,11 +128,11 @@ class BacktestEngine:
                 timestamp=current_kline.close_time
             )
             
-            # 更新持仓盈亏
+            # UpdatePositionP&L
             if self.position:
                 self.position.update_pnl(current_kline.close)
             
-            # 生成信号
+            # Generate signals
             signal = await strategy.run(
                 symbol=symbol,
                 ticker=ticker,
@@ -140,25 +140,25 @@ class BacktestEngine:
                 position=self.position
             )
             
-            # 执行交易
+            # Execute trades
             if signal.is_actionable:
                 self._execute_signal(signal, current_kline, order_size)
             
-            # 检查止损止盈
+            # CheckStop-loss / Take-profit
             if self.position:
                 self._check_stop_loss_take_profit(current_kline)
             
-            # 记录权益
+            # Record equity
             equity = self.balance
             if self.position:
                 equity += self.position.unrealized_pnl
             self.equity_curve.append(equity)
         
-        # 平仓
+        # Close position
         if self.position:
-            self._close_position(klines[-1], "回测结束平仓")
+            self._close_position(klines[-1], "BacktestEndClose position")
         
-        # 计算结果
+        # CalculateResult
         result = self._calculate_result(symbol, strategy.name, klines)
         
         logger.info(f"Backtest completed: Return={result.total_return_pct:.2f}%, "
@@ -169,25 +169,25 @@ class BacktestEngine:
         return result
     
     def _execute_signal(self, signal: Signal, kline: Kline, order_size: float):
-        """执行信号"""
+        """ExecuteSignal"""
         price = kline.close
         
         if signal.direction == SignalDirection.LONG:
             if self.position and self.position.side == OrderSide.SELL:
-                # 先平空
-                self._close_position(kline, "反向开仓")
+                # Close short first
+                self._close_position(kline, "Reverse position")
             
             if not self.position:
-                # 开多
+                # Open long
                 self._open_position(OrderSide.BUY, price, order_size, kline.close_time, signal)
         
         elif signal.direction == SignalDirection.SHORT:
             if self.position and self.position.side == OrderSide.BUY:
-                # 先平多
-                self._close_position(kline, "反向开仓")
+                # Close long first
+                self._close_position(kline, "Reverse position")
             
             if not self.position:
-                # 开空
+                # Open short
                 self._open_position(OrderSide.SELL, price, order_size, kline.close_time, signal)
         
         elif signal.direction == SignalDirection.CLOSE:
@@ -202,20 +202,20 @@ class BacktestEngine:
         timestamp: datetime,
         signal: Signal
     ):
-        """开仓"""
-        # 计算实际成交价（含滑点）
+        """Open position"""
+        # Calculate actual fill price (including slippage)
         if side == OrderSide.BUY:
             fill_price = price * (1 + self.slippage)
         else:
             fill_price = price * (1 - self.slippage)
         
-        # 计算手续费
+        # CalculateFee
         fee = size * self.fee_rate
         
-        # 计算可买数量
+        # Calculate available quantity
         actual_size = (size - fee) / fill_price
         
-        # 创建持仓
+        # CreatePosition
         self.position = Position(
             symbol=signal.symbol,
             side=side,
@@ -227,10 +227,10 @@ class BacktestEngine:
             opened_at=timestamp
         )
         
-        # 扣除余额
+        # Deduct balance
         self.balance -= size
         
-        # 记录交易
+        # Record trade
         self.trades.append(Trade(
             timestamp=timestamp,
             symbol=signal.symbol,
@@ -244,32 +244,32 @@ class BacktestEngine:
         logger.debug(f"Opened {side.value} position: {actual_size:.4f} @ {fill_price:.2f}")
     
     def _close_position(self, kline: Kline, reason: str):
-        """平仓"""
+        """Close position"""
         if not self.position:
             return
         
         price = kline.close
         
-        # 计算实际成交价（含滑点）
+        # Calculate actual fill price (including slippage)
         if self.position.side == OrderSide.BUY:
             fill_price = price * (1 - self.slippage)
         else:
             fill_price = price * (1 + self.slippage)
         
-        # 计算盈亏
+        # CalculateP&L
         if self.position.side == OrderSide.BUY:
             pnl = (fill_price - self.position.entry_price) * self.position.size
         else:
             pnl = (self.position.entry_price - fill_price) * self.position.size
         
-        # 计算手续费
+        # CalculateFee
         fee = self.position.size * fill_price * self.fee_rate
         pnl -= fee
         
-        # 更新余额
+        # UpdateBalance
         self.balance += self.position.size * fill_price - fee
         
-        # 记录交易
+        # Record trade
         self.trades.append(Trade(
             timestamp=kline.close_time,
             symbol=self.position.symbol,
@@ -286,27 +286,27 @@ class BacktestEngine:
         self.position = None
     
     def _check_stop_loss_take_profit(self, kline: Kline):
-        """检查止损止盈"""
+        """CheckStop-loss / Take-profit"""
         if not self.position:
             return
         
         if self.position.side == OrderSide.BUY:
-            # 多头止损
+            # Long stop-loss
             if self.position.stop_loss and kline.low <= self.position.stop_loss:
-                self._close_position(kline, f"止损触发 @ {self.position.stop_loss}")
+                self._close_position(kline, f"Stop-loss triggered @ {self.position.stop_loss}")
                 return
-            # 多头止盈
+            # Long take-profit
             if self.position.take_profit and kline.high >= self.position.take_profit:
-                self._close_position(kline, f"止盈触发 @ {self.position.take_profit}")
+                self._close_position(kline, f"Take-profit triggered @ {self.position.take_profit}")
                 return
         else:
-            # 空头止损
+            # Short stop-loss
             if self.position.stop_loss and kline.high >= self.position.stop_loss:
-                self._close_position(kline, f"止损触发 @ {self.position.stop_loss}")
+                self._close_position(kline, f"Stop-loss triggered @ {self.position.stop_loss}")
                 return
-            # 空头止盈
+            # Short take-profit
             if self.position.take_profit and kline.low <= self.position.take_profit:
-                self._close_position(kline, f"止盈触发 @ {self.position.take_profit}")
+                self._close_position(kline, f"Take-profit triggered @ {self.position.take_profit}")
                 return
     
     def _calculate_result(
@@ -315,37 +315,37 @@ class BacktestEngine:
         strategy_name: str,
         klines: List[Kline]
     ) -> BacktestResult:
-        """计算回测结果"""
+        """Calculate backtest results"""
         
         equity = np.array(self.equity_curve)
         
-        # 基本收益
+        # Basic profit
         total_return = self.balance - self.initial_balance
         total_return_pct = total_return / self.initial_balance * 100
         
-        # 年化收益
+        # Annualized return
         days = (klines[-1].close_time - klines[0].open_time).days
         if days > 0:
             annualized_return = (1 + total_return / self.initial_balance) ** (365 / days) - 1
         else:
             annualized_return = 0
         
-        # 最大回撤
+        # MaximumDrawdown
         peak = np.maximum.accumulate(equity)
         drawdown = (peak - equity) / peak * 100
         max_drawdown_pct = np.max(drawdown)
         max_drawdown = np.max(peak - equity)
         
-        # 收益率序列
+        # Return rate series
         returns = np.diff(equity) / equity[:-1]
         
-        # Sharpe比率（假设无风险利率为0）
+        # Sharpe ratio (assuming risk-free rate of 0)
         if len(returns) > 0 and np.std(returns) > 0:
             sharpe_ratio = np.mean(returns) / np.std(returns) * np.sqrt(252)
         else:
             sharpe_ratio = 0
         
-        # Sortino比率
+        # Sortino ratio
         negative_returns = returns[returns < 0]
         if len(negative_returns) > 0:
             downside_std = np.std(negative_returns)
@@ -356,13 +356,13 @@ class BacktestEngine:
         else:
             sortino_ratio = sharpe_ratio
         
-        # Calmar比率
+        # Calmar ratio
         if max_drawdown_pct > 0:
             calmar_ratio = annualized_return * 100 / max_drawdown_pct
         else:
             calmar_ratio = 0
         
-        # 交易统计
+        # Trade statistics
         pnl_trades = [t for t in self.trades if t.pnl != 0]
         winning_trades = [t for t in pnl_trades if t.pnl > 0]
         losing_trades = [t for t in pnl_trades if t.pnl < 0]

@@ -1,6 +1,6 @@
 """
-Hyperliquid 链上永续合约交易执行器
-支持 Hyperliquid L1 链上订单簿交易
+Hyperliquid on-chain perpetual futures trading executor
+Supports Hyperliquid L1 on-chain order book trading
 """
 
 import asyncio
@@ -23,7 +23,7 @@ logger = get_logger("hyperliquid")
 
 
 class HyperliquidOrderType(str, Enum):
-    """Hyperliquid订单类型"""
+    """Hyperliquid order type"""
     LIMIT = "limit"
     MARKET = "market"
     STOP_MARKET = "stop_market"
@@ -34,14 +34,14 @@ class HyperliquidOrderType(str, Enum):
 
 class HyperliquidExecutor:
     """
-    Hyperliquid 链上永续合约执行器
+    Hyperliquid on-chain perpetual futures executor
     
-    功能：
-    - 链上订单簿交易（真实的去中心化永续合约）
-    - 支持限价单、市价单、止损止盈
-    - 杠杆交易（最高50x）
-    - 实时持仓管理
-    - 零Gas费交易（Hyperliquid L1特性）
+    Features:
+    - On-chain order book trading (real decentralized perpetual contracts)
+    - Supports limit orders, market orders, stop-loss/take-profit
+    - Leveraged trading (up to 50x)
+    - Real-time position management
+    - Zero gas fee trading (Hyperliquid L1 feature)
     """
     
     def __init__(
@@ -52,24 +52,24 @@ class HyperliquidExecutor:
         vault_address: Optional[str] = None
     ):
         """
-        初始化Hyperliquid执行器
+        Initialize the Hyperliquid executor
         
         Args:
-            private_key: 私钥（0x开头）
-            testnet: 是否使用测试网
-            default_leverage: 默认杠杆倍数（1-50）
-            vault_address: Vault地址（如果通过Vault交易）
+            private_key: Private key (starting with 0x)
+            testnet: Whether to use testnet
+            default_leverage: Default leverage multiplier (1-50)
+            vault_address: Vault address (if trading through a Vault)
         """
         self.private_key = private_key
         self.testnet = testnet
         self.default_leverage = default_leverage
         self.vault_address = vault_address
         
-        # 创建账户
+        # Create account
         self.account: LocalAccount = Account.from_key(private_key)
         self.address = self.account.address
         
-        # 初始化Info和Exchange客户端
+        # Initialize Info and Exchange clients
         base_url = constants.TESTNET_API_URL if testnet else constants.MAINNET_API_URL
         
         self.info = Info(base_url=base_url, skip_ws=True)
@@ -79,23 +79,23 @@ class HyperliquidExecutor:
             vault_address=vault_address
         )
         
-        # 缓存
+        # Cache
         self._positions: Dict[str, Position] = {}
         self._orders: Dict[str, Order] = {}
-        self._asset_contexts: Dict[str, Dict] = {}  # 资产上下文（精度等）
+        self._asset_contexts: Dict[str, Dict] = {}  # Asset context (precision, etc.)
         
         logger.info(f"Hyperliquid Executor initialized (testnet={testnet}, address={self.address})")
     
     async def initialize(self):
-        """初始化：获取资产信息和设置杠杆"""
+        """Initialize: fetch asset info and set leverage"""
         try:
-            # 获取所有资产信息
+            # Get all asset info
             meta = self.info.meta()
             self.universe = meta['universe']
             
             logger.info(f"Found {len(self.universe)} assets on Hyperliquid")
             
-            # 构建资产上下文
+            # Build asset context
             for asset_info in self.universe:
                 symbol = asset_info['name']
                 self._asset_contexts[symbol] = {
@@ -105,7 +105,7 @@ class HyperliquidExecutor:
                     'only_isolated': asset_info.get('onlyIsolated', False)
                 }
             
-            # 为常用资产设置杠杆
+            # Set leverage for common assets
             common_assets = ['BTC', 'ETH', 'SOL', 'HYPE']
             
             for asset in common_assets:
@@ -116,7 +116,7 @@ class HyperliquidExecutor:
                     except Exception as e:
                         logger.warning(f"Failed to set leverage for {asset}: {e}")
             
-            # 获取当前账户状态
+            # Get current account state
             user_state = self.info.user_state(self.address)
             if user_state:
                 logger.info(f"Account value: ${user_state.get('marginSummary', {}).get('accountValue', 0)}")
@@ -129,29 +129,29 @@ class HyperliquidExecutor:
     
     async def set_leverage(self, asset: str, leverage: int, is_cross: bool = True) -> bool:
         """
-        设置杠杆
+        Set leverage
         
         Args:
-            asset: 资产名称（如BTC）
-            leverage: 杠杆倍数（1-50）
-            is_cross: 是否全仓（True=全仓，False=逐仓）
+            asset: Asset name (e.g. BTC)
+            leverage: Leverage multiplier (1-50)
+            is_cross: Whether cross margin (True=cross, False=isolated)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 检查资产是否存在
+            # Check if asset exists
             if asset not in self._asset_contexts:
                 logger.error(f"Asset {asset} not found")
                 return False
             
-            # 检查杠杆范围
+            # Check leverage range
             max_leverage = self._asset_contexts[asset]['max_leverage']
             if leverage > max_leverage:
                 logger.warning(f"Leverage {leverage} exceeds max {max_leverage}, using {max_leverage}")
                 leverage = max_leverage
             
-            # 设置杠杆
+            # Set leverage
             result = self.exchange.update_leverage(
                 leverage=leverage,
                 asset=asset,
@@ -181,39 +181,39 @@ class HyperliquidExecutor:
         slippage: float = 0.05
     ) -> Optional[Order]:
         """
-        下单
+        Place an order
         
         Args:
-            asset: 资产名称（如BTC）
-            side: 买卖方向
-            order_type: 订单类型
-            quantity: 数量
-            price: 价格（限价单需要）
-            reduce_only: 是否只减仓
-            time_in_force: 有效期（Gtc/Ioc/Alo）
-            slippage: 滑点容忍度（市价单）
+            asset: Asset name (e.g. BTC)
+            side: Buy/sell direction
+            order_type: Order type
+            quantity: Quantity
+            price: Price (required for limit orders)
+            reduce_only: Whether reduce-only
+            time_in_force: Time-in-force (Gtc/Ioc/Alo)
+            slippage: Slippage tolerance (for market orders)
         
         Returns:
-            订单对象
+            Order object
         """
         try:
-            # 检查资产
+            # Check asset
             if asset not in self._asset_contexts:
                 logger.error(f"Asset {asset} not found")
                 return None
             
-            # 获取资产精度
+            # Get asset precision
             sz_decimals = self._asset_contexts[asset]['sz_decimals']
             
-            # 格式化数量
+            # Format quantity
             quantity = round(quantity, sz_decimals)
             
-            # 确定是买还是卖
+            # Determine buy or sell
             is_buy = (side == OrderSide.BUY)
             
-            # 构造订单参数
+            # Build order parameters
             if order_type == OrderType.LIMIT:
-                # 限价单
+                # Limit order
                 if price is None:
                     raise ValueError("Limit order requires price")
                 
@@ -227,14 +227,14 @@ class HyperliquidExecutor:
                 )
                 
             elif order_type == OrderType.MARKET:
-                # 市价单（使用限价单模拟，设置较大的滑点）
-                # 获取当前市场价格
+                # Market order (simulated with limit order using large slippage)
+                # Get current market price
                 mid_price = await self._get_mid_price(asset)
                 if mid_price is None:
                     logger.error(f"Failed to get mid price for {asset}")
                     return None
                 
-                # 计算滑点价格
+                # Calculate slippage price
                 if is_buy:
                     limit_price = mid_price * (1 + slippage)
                 else:
@@ -245,7 +245,7 @@ class HyperliquidExecutor:
                     is_buy=is_buy,
                     sz=quantity,
                     limit_px=limit_price,
-                    order_type={'limit': {'tif': 'Ioc'}},  # 立即成交或取消
+                    order_type={'limit': {'tif': 'Ioc'}},  # Immediate-or-cancel
                     reduce_only=reduce_only
                 )
             
@@ -253,17 +253,17 @@ class HyperliquidExecutor:
                 logger.error(f"Unsupported order type: {order_type}")
                 return None
             
-            # 检查结果
+            # Check result
             if order_result.get('status') == 'ok':
                 response = order_result.get('response', {})
                 data = response.get('data', {})
                 
-                # 提取订单信息
+                # Extract order info
                 statuses = data.get('statuses', [])
                 if statuses:
                     status_info = statuses[0]
                     
-                    # 创建Order对象
+                    # Create Order object
                     order = Order(
                         order_id=str(status_info.get('oid', '')),
                         symbol=asset,
@@ -293,14 +293,14 @@ class HyperliquidExecutor:
     
     async def cancel_order(self, asset: str, order_id: int) -> bool:
         """
-        撤单
+        Cancel an order
         
         Args:
-            asset: 资产名称
-            order_id: 订单ID（整数）
+            asset: Asset name
+            order_id: Order ID (integer)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             result = self.exchange.cancel(
@@ -311,7 +311,7 @@ class HyperliquidExecutor:
             if result.get('status') == 'ok':
                 logger.info(f"Order cancelled: {order_id}")
                 
-                # 更新订单状态
+                # Update order status
                 order_id_str = str(order_id)
                 if order_id_str in self._orders:
                     self._orders[order_id_str].status = OrderStatus.CANCELLED
@@ -327,13 +327,13 @@ class HyperliquidExecutor:
     
     async def cancel_all_orders(self, asset: Optional[str] = None) -> bool:
         """
-        撤销所有订单
+        Cancel all orders
         
         Args:
-            asset: 资产名称（None表示所有资产）
+            asset: Asset name (None for all assets)
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
             result = self.exchange.cancel_all(asset=asset)
@@ -351,13 +351,13 @@ class HyperliquidExecutor:
     
     async def get_open_orders(self, asset: Optional[str] = None) -> List[Order]:
         """
-        获取未成交订单
+        Get open orders
         
         Args:
-            asset: 资产名称（None表示所有资产）
+            asset: Asset name (None for all assets)
         
         Returns:
-            订单列表
+            List of orders
         """
         try:
             user_state = self.info.user_state(self.address)
@@ -371,11 +371,11 @@ class HyperliquidExecutor:
                 position_data = order_data.get('position', {})
                 asset_name = position_data.get('coin', '')
                 
-                # 过滤资产
+                # Filter by asset
                 if asset and asset_name != asset:
                     continue
                 
-                # 获取该资产的订单
+                # Get orders for this asset
                 for order_info in position_data.get('openOrders', []):
                     order = self._convert_to_order(order_info, asset_name)
                     open_orders.append(order)
@@ -389,13 +389,13 @@ class HyperliquidExecutor:
     
     async def get_position(self, asset: str) -> Optional[Position]:
         """
-        获取持仓
+        Get position
         
         Args:
-            asset: 资产名称
+            asset: Asset name
         
         Returns:
-            持仓对象
+            Position object
         """
         try:
             user_state = self.info.user_state(self.address)
@@ -422,10 +422,10 @@ class HyperliquidExecutor:
     
     async def get_all_positions(self) -> List[Position]:
         """
-        获取所有持仓
+        Get all positions
         
         Returns:
-            持仓列表
+            List of positions
         """
         try:
             user_state = self.info.user_state(self.address)
@@ -452,27 +452,27 @@ class HyperliquidExecutor:
     
     async def close_position(self, asset: str) -> bool:
         """
-        平仓
+        Close a position
         
         Args:
-            asset: 资产名称
+            asset: Asset name
         
         Returns:
-            是否成功
+            Whether successful
         """
         try:
-            # 获取当前持仓
+            # Get current position
             position = await self.get_position(asset)
             
             if not position or position.quantity == 0:
                 logger.warning(f"No position to close for {asset}")
                 return False
             
-            # 确定平仓方向和数量
+            # Determine close direction and quantity
             quantity = abs(position.quantity)
             side = OrderSide.SELL if position.quantity > 0 else OrderSide.BUY
             
-            # 市价平仓
+            # Market close
             order = await self.place_order(
                 asset=asset,
                 side=side,
@@ -493,10 +493,10 @@ class HyperliquidExecutor:
     
     async def get_account_balance(self) -> Dict[str, Any]:
         """
-        获取账户余额
+        Get account balance
         
         Returns:
-            余额信息
+            Balance information
         """
         try:
             user_state = self.info.user_state(self.address)
@@ -522,7 +522,7 @@ class HyperliquidExecutor:
             return {}
     
     async def _get_mid_price(self, asset: str) -> Optional[float]:
-        """获取资产的中间价"""
+        """Get mid price for asset"""
         try:
             all_mids = self.info.all_mids()
             return float(all_mids.get(asset, 0))
@@ -531,7 +531,7 @@ class HyperliquidExecutor:
             return None
     
     def _convert_order_status(self, status: str) -> OrderStatus:
-        """转换订单状态"""
+        """Convert order status"""
         mapping = {
             'open': OrderStatus.PENDING,
             'filled': OrderStatus.FILLED,
@@ -542,14 +542,14 @@ class HyperliquidExecutor:
         return mapping.get(status.lower(), OrderStatus.PENDING)
     
     def _convert_to_order(self, data: Dict, asset: str) -> Order:
-        """转换Hyperliquid订单数据为Order对象"""
+        """Convert Hyperliquid order data to Order object"""
         side = OrderSide.BUY if data.get('side') == 'B' else OrderSide.SELL
         
         return Order(
             order_id=str(data.get('oid', '')),
             symbol=asset,
             side=side,
-            order_type=OrderType.LIMIT,  # Hyperliquid主要是限价单
+            order_type=OrderType.LIMIT,  # Hyperliquid primarily uses limit orders
             quantity=abs(float(data.get('sz', 0))),
             price=float(data.get('limitPx', 0)),
             status=OrderStatus.PENDING,
@@ -560,7 +560,7 @@ class HyperliquidExecutor:
         )
     
     def _convert_to_position(self, data: Dict) -> Position:
-        """转换Hyperliquid持仓数据为Position对象"""
+        """Convert Hyperliquid position data to Position object"""
         szi = float(data.get('szi', 0))
         entry_price = float(data.get('entryPx', 0))
         
@@ -577,17 +577,17 @@ class HyperliquidExecutor:
         )
 
 
-# ==================== 辅助函数 ====================
+# ==================== Helper functions ====================
 
 async def test_hyperliquid():
-    """测试Hyperliquid功能"""
+    """Test Hyperliquid functionality"""
     import os
     
     private_key = os.getenv('HYPERLIQUID_PRIVATE_KEY', '')
     
     if not private_key:
         logger.warning("No Hyperliquid private key provided")
-        # 生成测试私钥（仅用于演示）
+        # Generate test private key (for demo only)
         test_account = Account.create()
         private_key = test_account.key.hex()
         logger.info(f"Generated test account: {test_account.address}")
@@ -599,21 +599,21 @@ async def test_hyperliquid():
     )
     
     try:
-        # 初始化
+        # Initialize
         await executor.initialize()
         
-        # 获取账户余额
+        # Get account balance
         balance = await executor.get_account_balance()
         logger.info(f"Account balance: {balance}")
         
-        # 获取所有持仓
+        # Get all positions
         positions = await executor.get_all_positions()
         logger.info(f"Current positions: {len(positions)}")
         
         for pos in positions:
             logger.info(f"Position: {pos.symbol} {pos.quantity} @ {pos.entry_price}")
         
-        # 获取未成交订单
+        # Get open orders
         open_orders = await executor.get_open_orders()
         logger.info(f"Open orders: {len(open_orders)}")
         

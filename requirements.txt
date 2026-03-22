@@ -1,45 +1,45 @@
 # Auto Trading Agent - Python Dependencies
 
-# Web框架
+# Web framework
 fastapi>=0.104.0
 uvicorn>=0.24.0
 websockets>=12.0
 
-# 数据处理
+# Data processing
 numpy>=1.24.0
 pandas>=2.0.0
 pydantic>=2.0.0
 
-# HTTP客户端
+# HTTP client
 httpx>=0.25.0
 aiohttp>=3.9.0
 
 # AI/LLM
 openai>=1.0.0
 
-# 配置管理
+# Configuration management
 pyyaml>=6.0.0
 python-dotenv>=1.0.0
 
-# 日志
+# Logging
 colorlog>=6.7.0
 
-# 工具
+# Utilities
 python-dateutil>=2.8.0
 
-# Web3相关
+# Web3
 web3>=7.0.0
 eth-account>=0.13.0
 
-# 交易所API
+# Exchange API
 ccxt>=4.0.0
 python-binance>=1.0.0
 
 # Hyperliquid
 hyperliquid-python-sdk>=0.21.0
 
-# 技术指标
+# Technical indicators
 ta>=0.11.0
 
-# 数据抓取
+# Data scraping
 apify-client>=2.0.0

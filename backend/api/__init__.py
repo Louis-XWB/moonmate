@@ -1,5 +1,5 @@
 # Auto Trading Agent - API Layer
-# API接口层：REST API和WebSocket
+# API layer: REST API and WebSocket
 
 from .main import app, create_app
 

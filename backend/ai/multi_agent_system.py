@@ -1,8 +1,8 @@
 """
-多Agent协作系统 (Multi-Agent Collaboration System)
+Multi-Agent Collaboration System
 
-这是黑客松的核心创新功能：多个专业AI Agent协作决策
-不是单一AI，而是一个"AI交易委员会"
+Core hackathon innovation: multiple specialized AI Agents collaborate on decisions
+Not a single AI, but an "AI Trading Committee"
 """
 
 import asyncio
@@ -16,32 +16,32 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRole(Enum):
-    """Agent角色"""
-    NEWS_ANALYST = "news_analyst"  # 新闻分析Agent
-    TECHNICAL_ANALYST = "technical_analyst"  # 技术分析Agent
-    ONCHAIN_ANALYST = "onchain_analyst"  # 链上分析Agent
-    RISK_MANAGER = "risk_manager"  # 风控Agent
-    DECISION_MAKER = "decision_maker"  # 决策Agent
+    """Agent role"""
+    NEWS_ANALYST = "news_analyst"  # News Analyst Agent
+    TECHNICAL_ANALYST = "technical_analyst"  # Technical Analyst Agent
+    ONCHAIN_ANALYST = "onchain_analyst"  # On-chain Analyst Agent
+    RISK_MANAGER = "risk_manager"  # Risk Control Agent
+    DECISION_MAKER = "decision_maker"  # Decision Maker Agent
 
 
 class VoteDecision(Enum):
-    """投票决策"""
-    STRONG_LONG = "strong_long"  # 强烈做多
-    LONG = "long"  # 做多
-    HOLD = "hold"  # 观望
-    SHORT = "short"  # 做空
-    STRONG_SHORT = "strong_short"  # 强烈做空
+    """Vote decision"""
+    STRONG_LONG = "strong_long"  # Strong Long
+    LONG = "long"  # Long
+    HOLD = "hold"  # Hold
+    SHORT = "short"  # Short
+    STRONG_SHORT = "strong_short"  # Strong Short
 
 
 @dataclass
 class AgentOpinion:
-    """Agent意见"""
+    """Agent opinion"""
     agent_role: AgentRole
     agent_name: str
     decision: VoteDecision
     confidence: float  # 0-1
-    reasoning: str  # 分析理由
-    key_points: List[str] = field(default_factory=list)  # 关键要点
+    reasoning: str  # Analysis reasoning
+    key_points: List[str] = field(default_factory=list)  # Key takeaways
     timestamp: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -58,12 +58,12 @@ class AgentOpinion:
 
 @dataclass
 class ConsensusResult:
-    """共识结果"""
+    """Consensus result"""
     final_decision: VoteDecision
-    confidence: float  # 综合置信度
-    vote_distribution: Dict[str, int]  # 投票分布
-    agent_opinions: List[AgentOpinion]  # 所有Agent意见
-    debate_summary: str  # 辩论总结
+    confidence: float  # Overall confidence
+    vote_distribution: Dict[str, int]  # Vote distribution
+    agent_opinions: List[AgentOpinion]  # All agent opinions
+    debate_summary: str  # Debate summary
     timestamp: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -78,15 +78,15 @@ class ConsensusResult:
 
 
 class BaseAgent:
-    """Agent基类"""
+    """Agent base class"""
     
     def __init__(self, role: AgentRole, name: str, weight: float = 1.0):
         self.role = role
         self.name = name
-        self.weight = weight  # 权重，用于加权投票
+        self.weight = weight  # Weight for weighted voting
         
     async def analyze(self, context: Dict[str, Any]) -> AgentOpinion:
-        """分析并给出意见"""
+        """Analyze and provide opinion"""
         raise NotImplementedError
         
     def _create_opinion(
@@ -96,7 +96,7 @@ class BaseAgent:
         reasoning: str,
         key_points: List[str]
     ) -> AgentOpinion:
-        """创建意见"""
+        """Create opinion"""
         return AgentOpinion(
             agent_role=self.role,
             agent_name=self.name,
@@ -108,14 +108,14 @@ class BaseAgent:
 
 
 class NewsAnalystAgent(BaseAgent):
-    """新闻分析Agent"""
+    """News Analyst Agent"""
     
     def __init__(self, news_analyzer, weight: float = 1.0):
-        super().__init__(AgentRole.NEWS_ANALYST, "📰 新闻分析师", weight)
+        super().__init__(AgentRole.NEWS_ANALYST, "📰 News Analyst", weight)
         self.news_analyzer = news_analyzer
         
     async def analyze(self, context: Dict[str, Any]) -> AgentOpinion:
-        """分析新闻影响"""
+        """Analyze news impact"""
         try:
             news_impacts = context.get("news_impacts", [])
             
@@ -123,16 +123,16 @@ class NewsAnalystAgent(BaseAgent):
                 return self._create_opinion(
                     VoteDecision.HOLD,
                     0.5,
-                    "暂无重要新闻",
-                    ["没有3星以上的重要新闻"]
+                    "No significant news available",
+                    ["No important news with 3+ star rating"]
                 )
             
-            # 计算新闻综合影响
+            # Calculate combined news impact
             bullish_count = sum(1 for n in news_impacts if n.get("impact_direction") == "bullish")
             bearish_count = sum(1 for n in news_impacts if n.get("impact_direction") == "bearish")
             avg_score = sum(n.get("impact_score", 0) for n in news_impacts) / len(news_impacts)
             
-            # 决策逻辑
+            # Decision logic
             if avg_score > 0.4:
                 decision = VoteDecision.STRONG_LONG
                 confidence = min(0.9, 0.6 + abs(avg_score))
@@ -149,17 +149,17 @@ class NewsAnalystAgent(BaseAgent):
                 decision = VoteDecision.HOLD
                 confidence = 0.6
             
-            # 生成理由和要点
-            reasoning = f"分析了{len(news_impacts)}条重要新闻，"
+            # Generate reasoning and key points
+            reasoning = f"Analyzed {len(news_impacts)} important news items, "
             if bullish_count > bearish_count:
-                reasoning += f"利好新闻占主导({bullish_count}条利好 vs {bearish_count}条利空)"
+                reasoning += f"Bullish news dominates({bullish_count} bullish vs {bearish_count} bearish)"
             elif bearish_count > bullish_count:
-                reasoning += f"利空新闻占主导({bearish_count}条利空 vs {bullish_count}条利好)"
+                reasoning += f"Bearish news dominates({bearish_count} bearish vs {bullish_count} bullish)"
             else:
-                reasoning += "利好利空新闻相当"
+                reasoning += "Bullish and bearish news are balanced"
             
             key_points = []
-            for news in news_impacts[:3]:  # 最多3条
+            for news in news_impacts[:3]:  # Up to 3 items
                 direction_emoji = "📈" if news.get("impact_direction") == "bullish" else "📉" if news.get("impact_direction") == "bearish" else "➡️"
                 key_points.append(f"{direction_emoji} {news.get('title', '')[:50]}...")
             
@@ -170,19 +170,19 @@ class NewsAnalystAgent(BaseAgent):
             return self._create_opinion(
                 VoteDecision.HOLD,
                 0.5,
-                f"新闻分析出错: {str(e)}",
+                f"News analysis error: {str(e)}",
                 []
             )
 
 
 class TechnicalAnalystAgent(BaseAgent):
-    """技术分析Agent"""
+    """Technical Analyst Agent"""
     
     def __init__(self, weight: float = 1.0):
-        super().__init__(AgentRole.TECHNICAL_ANALYST, "📊 技术分析师", weight)
+        super().__init__(AgentRole.TECHNICAL_ANALYST, "📊 Technical Analyst", weight)
         
     async def analyze(self, context: Dict[str, Any]) -> AgentOpinion:
-        """分析技术指标"""
+        """Analyze technical indicators"""
         try:
             ticker = context.get("ticker", {})
             klines = context.get("klines", [])
@@ -191,19 +191,19 @@ class TechnicalAnalystAgent(BaseAgent):
                 return self._create_opinion(
                     VoteDecision.HOLD,
                     0.5,
-                    "数据不足，无法分析",
-                    ["缺少价格或K线数据"]
+                    "Insufficient data for analysis",
+                    ["Missing price or candlestick data"]
                 )
             
-            # 简单的技术分析逻辑
+            # Simple technical analysis logic
             current_price = float(ticker.get("last", 0))
             
-            # 计算移动平均线
+            # Calculate moving averages
             closes = [float(k.get("close", 0)) for k in klines[-20:]]
             ma5 = sum(closes[-5:]) / 5 if len(closes) >= 5 else current_price
             ma20 = sum(closes) / len(closes) if closes else current_price
             
-            # 计算RSI（简化版）
+            # Calculate RSI (simplified)
             changes = [closes[i] - closes[i-1] for i in range(1, len(closes))]
             gains = [c for c in changes if c > 0]
             losses = [-c for c in changes if c < 0]
@@ -212,49 +212,49 @@ class TechnicalAnalystAgent(BaseAgent):
             rs = avg_gain / avg_loss if avg_loss > 0 else 100
             rsi = 100 - (100 / (1 + rs))
             
-            # 决策逻辑
+            # Decision logic
             key_points = []
             score = 0
             
-            # MA交叉
+            # MA crossover
             if ma5 > ma20:
                 score += 1
-                key_points.append(f"✅ MA5({ma5:.2f}) > MA20({ma20:.2f})，短期趋势向上")
+                key_points.append(f"✅ MA5({ma5:.2f}) > MA20({ma20:.2f}), short-term trend is up")
             else:
                 score -= 1
-                key_points.append(f"❌ MA5({ma5:.2f}) < MA20({ma20:.2f})，短期趋势向下")
+                key_points.append(f"❌ MA5({ma5:.2f}) < MA20({ma20:.2f}), short-term trend is down")
             
             # RSI
             if rsi < 30:
                 score += 1
-                key_points.append(f"✅ RSI({rsi:.1f})超卖，可能反弹")
+                key_points.append(f"✅ RSI({rsi:.1f})oversold, possible rebound")
             elif rsi > 70:
                 score -= 1
-                key_points.append(f"❌ RSI({rsi:.1f})超买，可能回调")
+                key_points.append(f"❌ RSI({rsi:.1f})overbought, possible pullback")
             else:
-                key_points.append(f"➡️ RSI({rsi:.1f})中性")
+                key_points.append(f"➡️ RSI({rsi:.1f})neutral")
             
-            # 价格位置
+            # Price position
             if current_price > ma20 * 1.05:
                 score -= 0.5
-                key_points.append(f"⚠️ 价格高于MA20 5%以上，谨慎追高")
+                key_points.append(f"⚠️ Price >5% above MA20, be cautious chasing highs")
             elif current_price < ma20 * 0.95:
                 score += 0.5
-                key_points.append(f"✅ 价格低于MA20 5%以上，可能低吸机会")
+                key_points.append(f"✅ Price >5% below MA20, possible buying opportunity")
             
-            # 决策
+            # Decision
             if score >= 1.5:
                 decision = VoteDecision.LONG
                 confidence = 0.75
-                reasoning = "技术指标偏多，建议做多"
+                reasoning = "Technical indicators are bullish, recommend long"
             elif score <= -1.5:
                 decision = VoteDecision.SHORT
                 confidence = 0.75
-                reasoning = "技术指标偏空，建议做空"
+                reasoning = "Technical indicators are bearish, recommend short"
             else:
                 decision = VoteDecision.HOLD
                 confidence = 0.6
-                reasoning = "技术指标中性，建议观望"
+                reasoning = "Technical indicators are neutral, recommend hold"
             
             return self._create_opinion(decision, confidence, reasoning, key_points)
             
@@ -263,69 +263,69 @@ class TechnicalAnalystAgent(BaseAgent):
             return self._create_opinion(
                 VoteDecision.HOLD,
                 0.5,
-                f"技术分析出错: {str(e)}",
+                f"Technical analysis error: {str(e)}",
                 []
             )
 
 
 class OnChainAnalystAgent(BaseAgent):
-    """链上分析Agent"""
+    """On-chain Analyst Agent"""
     
     def __init__(self, whale_tracker, weight: float = 1.0):
-        super().__init__(AgentRole.ONCHAIN_ANALYST, "🔗 链上分析师", weight)
+        super().__init__(AgentRole.ONCHAIN_ANALYST, "🔗 On-chain Analyst", weight)
         self.whale_tracker = whale_tracker
         
     async def analyze(self, context: Dict[str, Any]) -> AgentOpinion:
-        """分析链上大户行为"""
+        """Analyze on-chain whale behavior"""
         try:
             symbol = context.get("symbol", "BTC/USDT")
             
-            # 获取大户行为分析
+            # Get whale behavior analysis
             whale_analysis = await self.whale_tracker.analyze_whale_behavior(symbol)
             
             if not whale_analysis:
                 return self._create_opinion(
                     VoteDecision.HOLD,
                     0.5,
-                    "暂无链上大户数据",
-                    ["Hyperliquid链上数据暂不可用"]
+                    "No on-chain whale data available",
+                    ["Hyperliquid on-chain data temporarily unavailable"]
                 )
             
-            # 分析大户行为
+            # Analyze whale behavior
             net_flow = whale_analysis.get("net_flow", 0)
             whale_count = whale_analysis.get("whale_count", 0)
             total_volume = whale_analysis.get("total_volume", 0)
             
             key_points = []
             
-            # 决策逻辑
-            if net_flow > 1000000:  # 净流入>100万
+            # Decision logic
+            if net_flow > 1000000:  # Net inflow > 1M
                 decision = VoteDecision.STRONG_LONG
                 confidence = 0.85
-                reasoning = f"大户正在大量买入，净流入${net_flow/1e6:.1f}M"
-                key_points.append(f"🐋 {whale_count}个大户正在建仓")
-                key_points.append(f"💰 累计买入${total_volume/1e6:.1f}M")
+                reasoning = f"Whales are buying heavily, net inflow ${net_flow/1e6:.1f}M"
+                key_points.append(f"🐋 {whale_count} whales are accumulating")
+                key_points.append(f"💰 Total bought ${total_volume/1e6:.1f}M")
             elif net_flow > 500000:
                 decision = VoteDecision.LONG
                 confidence = 0.75
-                reasoning = f"大户正在买入，净流入${net_flow/1e6:.1f}M"
-                key_points.append(f"🐋 {whale_count}个大户正在建仓")
+                reasoning = f"Whales are buying, net inflow ${net_flow/1e6:.1f}M"
+                key_points.append(f"🐋 {whale_count} whales are accumulating")
             elif net_flow < -1000000:
                 decision = VoteDecision.STRONG_SHORT
                 confidence = 0.85
-                reasoning = f"大户正在大量卖出，净流出${-net_flow/1e6:.1f}M"
-                key_points.append(f"🐋 {whale_count}个大户正在减仓")
-                key_points.append(f"💰 累计卖出${-total_volume/1e6:.1f}M")
+                reasoning = f"Whales are selling heavily, net outflow ${-net_flow/1e6:.1f}M"
+                key_points.append(f"🐋 {whale_count} whales are reducing positions")
+                key_points.append(f"💰 Total sold ${-total_volume/1e6:.1f}M")
             elif net_flow < -500000:
                 decision = VoteDecision.SHORT
                 confidence = 0.75
-                reasoning = f"大户正在卖出，净流出${-net_flow/1e6:.1f}M"
-                key_points.append(f"🐋 {whale_count}个大户正在减仓")
+                reasoning = f"Whales are selling, net outflow ${-net_flow/1e6:.1f}M"
+                key_points.append(f"🐋 {whale_count} whales are reducing positions")
             else:
                 decision = VoteDecision.HOLD
                 confidence = 0.6
-                reasoning = "大户行为中性，无明显方向"
-                key_points.append(f"➡️ 大户资金流动平稳")
+                reasoning = "Whale activity neutral, no clear direction"
+                key_points.append(f"➡️ Whale fund flow is stable")
             
             return self._create_opinion(decision, confidence, reasoning, key_points)
             
@@ -334,22 +334,22 @@ class OnChainAnalystAgent(BaseAgent):
             return self._create_opinion(
                 VoteDecision.HOLD,
                 0.5,
-                f"链上分析出错: {str(e)}",
+                f"On-chain analysis error: {str(e)}",
                 []
             )
 
 
 class RiskManagerAgent(BaseAgent):
-    """风控Agent"""
+    """Risk Control Agent"""
     
     def __init__(self, risk_manager, weight: float = 1.0):
-        super().__init__(AgentRole.RISK_MANAGER, "🛡️ 风控专家", weight)
+        super().__init__(AgentRole.RISK_MANAGER, "🛡️ Risk Control Expert", weight)
         self.risk_manager = risk_manager
         
     async def analyze(self, context: Dict[str, Any]) -> AgentOpinion:
-        """分析风险状况"""
+        """Analyze risk status"""
         try:
-            # 获取风控状态
+            # Get risk control status
             risk_status = self.risk_manager.get_status()
             
             current_drawdown = risk_status.get("current_drawdown", 0)
@@ -359,51 +359,51 @@ class RiskManagerAgent(BaseAgent):
             key_points = []
             warnings = []
             
-            # 风险评估
+            # Risk assessment
             risk_score = 0
             
-            # 回撤检查
+            # Drawdown check
             if current_drawdown > 0.08:
                 risk_score -= 2
-                warnings.append(f"⚠️ 当前回撤{current_drawdown*100:.1f}%，超过警戒线")
+                warnings.append(f"⚠️ Current drawdown {current_drawdown*100:.1f}%, exceeds warning threshold")
             elif current_drawdown > 0.05:
                 risk_score -= 1
-                warnings.append(f"⚠️ 当前回撤{current_drawdown*100:.1f}%，接近警戒线")
+                warnings.append(f"⚠️ Current drawdown {current_drawdown*100:.1f}%, approaching warning threshold")
             else:
-                key_points.append(f"✅ 当前回撤{current_drawdown*100:.1f}%，风险可控")
+                key_points.append(f"✅ Current drawdown {current_drawdown*100:.1f}%, risk manageable")
             
-            # 连续亏损检查
+            # Consecutive loss check
             if consecutive_losses >= 3:
                 risk_score -= 2
-                warnings.append(f"⚠️ 连续亏损{consecutive_losses}次，建议休息")
+                warnings.append(f"⚠️ Consecutive losses {consecutive_losses} times, recommend rest")
             elif consecutive_losses >= 2:
                 risk_score -= 1
-                warnings.append(f"⚠️ 连续亏损{consecutive_losses}次，谨慎交易")
+                warnings.append(f"⚠️ Consecutive losses {consecutive_losses} times, trade cautiously")
             else:
-                key_points.append(f"✅ 连续亏损{consecutive_losses}次，状态良好")
+                key_points.append(f"✅ Consecutive losses {consecutive_losses} times, status good")
             
-            # 日盈亏检查
+            # Daily P&L check
             if daily_pnl < -1000:
                 risk_score -= 1
-                warnings.append(f"⚠️ 今日亏损${-daily_pnl:.0f}，建议控制仓位")
+                warnings.append(f"⚠️ Today's loss ${-daily_pnl:.0f}, recommend reducing position size")
             elif daily_pnl > 1000:
-                key_points.append(f"✅ 今日盈利${daily_pnl:.0f}，状态良好")
+                key_points.append(f"✅ Today's profit ${daily_pnl:.0f}, status good")
             
-            # 决策
+            # Decision
             if risk_score <= -3:
                 decision = VoteDecision.HOLD
                 confidence = 0.9
-                reasoning = "风险过高，强烈建议停止交易"
+                reasoning = "Risk too high, strongly recommend stopping trading"
                 key_points = warnings
             elif risk_score <= -1:
                 decision = VoteDecision.HOLD
                 confidence = 0.75
-                reasoning = "存在风险，建议谨慎交易或观望"
+                reasoning = "Risk exists, recommend cautious trading or holding"
                 key_points = warnings + key_points
             else:
                 decision = VoteDecision.HOLD
                 confidence = 0.6
-                reasoning = "风险可控，可以正常交易"
+                reasoning = "Risk manageable, normal trading permitted"
             
             return self._create_opinion(decision, confidence, reasoning, key_points)
             
@@ -412,19 +412,19 @@ class RiskManagerAgent(BaseAgent):
             return self._create_opinion(
                 VoteDecision.HOLD,
                 0.7,
-                f"风控分析出错: {str(e)}，建议谨慎",
+                f"Risk analysis error: {str(e)}, recommend caution",
                 []
             )
 
 
 class DecisionMakerAgent(BaseAgent):
-    """决策Agent"""
+    """Decision Maker Agent"""
     
     def __init__(self, weight: float = 1.0):
-        super().__init__(AgentRole.DECISION_MAKER, "🎯 决策者", weight)
+        super().__init__(AgentRole.DECISION_MAKER, "🎯 Decision Maker", weight)
         
     def make_consensus(self, opinions: List[AgentOpinion]) -> ConsensusResult:
-        """基于所有Agent意见做出共识决策"""
+        """Make consensus decision based on all Agent opinions"""
         try:
             if not opinions:
                 return ConsensusResult(
@@ -432,14 +432,14 @@ class DecisionMakerAgent(BaseAgent):
                     confidence=0.5,
                     vote_distribution={},
                     agent_opinions=[],
-                    debate_summary="没有Agent意见"
+                    debate_summary="No Agent opinions"
                 )
             
-            # 统计投票分布
+            # Count vote distribution
             vote_distribution = {}
             weighted_scores = {}
             
-            # 决策映射到分数
+            # Map decisions to scores
             decision_scores = {
                 VoteDecision.STRONG_LONG: 2,
                 VoteDecision.LONG: 1,
@@ -452,16 +452,16 @@ class DecisionMakerAgent(BaseAgent):
                 decision_name = opinion.decision.value
                 vote_distribution[decision_name] = vote_distribution.get(decision_name, 0) + 1
                 
-                # 加权计算
+                # Weighted calculation
                 score = decision_scores[opinion.decision]
-                weight = 1.0  # 可以根据Agent角色调整权重
+                weight = 1.0  # Weight can be adjusted by Agent role
                 weighted_scores[opinion.agent_role] = score * weight * opinion.confidence
             
-            # 计算综合分数
+            # Calculate combined score
             total_score = sum(weighted_scores.values())
             avg_confidence = sum(op.confidence for op in opinions) / len(opinions)
             
-            # 决定最终决策
+            # Determine final decision
             if total_score >= 1.5:
                 final_decision = VoteDecision.STRONG_LONG
             elif total_score >= 0.5:
@@ -473,7 +473,7 @@ class DecisionMakerAgent(BaseAgent):
             else:
                 final_decision = VoteDecision.HOLD
             
-            # 生成辩论总结
+            # Generate debate summary
             debate_summary = self._generate_debate_summary(opinions, final_decision, total_score)
             
             return ConsensusResult(
@@ -491,7 +491,7 @@ class DecisionMakerAgent(BaseAgent):
                 confidence=0.5,
                 vote_distribution={},
                 agent_opinions=opinions,
-                debate_summary=f"决策出错: {str(e)}"
+                debate_summary=f"Decision error: {str(e)}"
             )
     
     def _generate_debate_summary(
@@ -500,25 +500,25 @@ class DecisionMakerAgent(BaseAgent):
         final_decision: VoteDecision,
         total_score: float
     ) -> str:
-        """生成辩论总结"""
+        """Generate debate summary"""
         long_agents = [op for op in opinions if op.decision in [VoteDecision.LONG, VoteDecision.STRONG_LONG]]
         short_agents = [op for op in opinions if op.decision in [VoteDecision.SHORT, VoteDecision.STRONG_SHORT]]
         hold_agents = [op for op in opinions if op.decision == VoteDecision.HOLD]
         
-        summary = f"AI委员会投票结果：{len(long_agents)}票做多，{len(short_agents)}票做空，{len(hold_agents)}票观望。"
+        summary = f"AI Committee vote results: {len(long_agents)} votes long, {len(short_agents)} votes short, {len(hold_agents)} votes hold. "
         
         if final_decision in [VoteDecision.STRONG_LONG, VoteDecision.LONG]:
-            summary += f"综合评分{total_score:.2f}，多方占优，最终决定做多。"
+            summary += f"Combined score{total_score:.2f}, bulls dominate, final decision: long."
         elif final_decision in [VoteDecision.STRONG_SHORT, VoteDecision.SHORT]:
-            summary += f"综合评分{total_score:.2f}，空方占优，最终决定做空。"
+            summary += f"Combined score{total_score:.2f}, bears dominate, final decision: short."
         else:
-            summary += f"综合评分{total_score:.2f}，多空分歧，最终决定观望。"
+            summary += f"Combined score{total_score:.2f}, bulls and bears divided, final decision: hold."
         
         return summary
 
 
 class MultiAgentSystem:
-    """多Agent协作系统"""
+    """Multi-Agent collaboration system"""
     
     def __init__(
         self,
@@ -540,16 +540,16 @@ class MultiAgentSystem:
         ]
         
     async def deliberate(self, context: Dict[str, Any]) -> ConsensusResult:
-        """AI委员会讨论并做出决策"""
-        logger.info("🗳️ AI委员会开始讨论...")
+        """AI committee deliberates and makes decision"""
+        logger.info("AI Committee deliberation started...")
         
-        # 并发收集所有Agent意见
+        # Collect all Agent opinions concurrently
         tasks = [agent.analyze(context) for agent in self.agents]
         opinions = await asyncio.gather(*tasks)
         
-        # 决策Agent做出最终决策
+        # Decision maker Agent makes final decision
         consensus = self.decision_maker.make_consensus(opinions)
         
-        logger.info(f"🎯 最终决策: {consensus.final_decision.value} (置信度: {consensus.confidence:.2f})")
+        logger.info(f"Final decision: {consensus.final_decision.value} (confidence: {consensus.confidence:.2f})")
         
         return consensus

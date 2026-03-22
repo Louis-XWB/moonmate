@@ -1,6 +1,6 @@
 """
-执行器模块
-负责将订单提交到交易所执行
+Executor module
+Responsible for submitting orders to exchanges for execution
 """
 
 import asyncio
@@ -16,26 +16,26 @@ logger = get_logger("executor")
 
 
 class Executor(ABC):
-    """执行器基类"""
+    """Executor base class"""
     
     @abstractmethod
     async def submit_order(self, order: Order) -> Dict[str, Any]:
-        """提交订单"""
+        """Submit an order"""
         pass
     
     @abstractmethod
     async def cancel_order(self, order_id: str, exchange_order_id: str) -> bool:
-        """取消订单"""
+        """Cancel an order"""
         pass
     
     @abstractmethod
     async def get_order_status(self, exchange_order_id: str) -> Dict[str, Any]:
-        """查询订单状态"""
+        """Query order status"""
         pass
 
 
 class MockExecutor(Executor):
-    """模拟执行器（用于测试和演示）"""
+    """Mock executor (for testing and demo purposes)"""
     
     def __init__(
         self,
@@ -49,25 +49,25 @@ class MockExecutor(Executor):
         self._order_counter = 0
     
     async def submit_order(self, order: Order) -> Dict[str, Any]:
-        """提交订单（模拟）"""
+        """Submit an order (simulated)"""
         self._order_counter += 1
         exchange_order_id = f"MOCK_{self._order_counter}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
         logger.info(f"Submitting order: {order.id} -> {exchange_order_id}")
         
-        # 模拟网络延迟
+        # Simulate network latency
         await asyncio.sleep(self.fill_delay * random.uniform(0.5, 1.5))
         
-        # 模拟成交
+        # Simulate order fill
         if random.random() < self.fill_probability:
-            # 计算成交价（加入滑点）
+            # Calculate fill price (with slippage)
             slippage = random.uniform(*self.slippage_range)
             if order.type == OrderType.MARKET:
                 fill_price = order.price * (1 + slippage) if order.price > 0 else 0
             else:
                 fill_price = order.price
             
-            # 模拟手续费（0.1%）
+            # Simulate trading fee (0.1%)
             fee = order.size * fill_price * 0.001
             
             return {
@@ -80,7 +80,7 @@ class MockExecutor(Executor):
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            # 模拟拒绝
+            # Simulate rejection
             return {
                 "success": False,
                 "exchange_order_id": exchange_order_id,
@@ -90,12 +90,12 @@ class MockExecutor(Executor):
             }
     
     async def cancel_order(self, order_id: str, exchange_order_id: str) -> bool:
-        """取消订单（模拟）"""
+        """Cancel an order (simulated)"""
         logger.info(f"Cancelling order: {order_id} ({exchange_order_id})")
         
         await asyncio.sleep(0.2)
         
-        # 90%概率成功取消
+        # 90% chance of successful cancellation
         success = random.random() < 0.9
         
         if success:
@@ -106,7 +106,7 @@ class MockExecutor(Executor):
         return success
     
     async def get_order_status(self, exchange_order_id: str) -> Dict[str, Any]:
-        """查询订单状态（模拟）"""
+        """Query order status (simulated)"""
         await asyncio.sleep(0.1)
         
         return {

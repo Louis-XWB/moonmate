@@ -1,18 +1,18 @@
-/* ==================== 横向布局 Decision Flow Matrix ==================== */
+/* ==================== Horizontal Layout Decision Flow Matrix ==================== */
 
 .decision-flow-matrix.horizontal {
   position: relative;
   width: 100%;
   height: calc(100vh - 120px);
   background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0a0e27 100%);
-  overflow: hidden;  /* 主容器隐藏溢出 */
+  overflow: hidden;  /* Hide overflow on main container */
   display: flex;
   flex-direction: column;
   font-family: 'Courier New', monospace;
-  min-width: 0;  /* 允许flex子项收缩 */
+  min-width: 0;  /* Allow flex children to shrink */
 }
 
-/* 动画背景画布 */
+/* Animated background canvas */
 .flow-canvas-bg {
   position: absolute;
   top: 0;
@@ -24,7 +24,7 @@
   z-index: 0;
 }
 
-/* ==================== 顶部控制栏 ==================== */
+/* ==================== Top Control Bar ==================== */
 
 .h-header {
   position: relative;
@@ -32,7 +32,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px;  /* 减小内边距 */
+  padding: 8px 20px;  /* Reduced padding */
   background: rgba(10, 14, 39, 0.8);
   border-bottom: 2px solid rgba(0, 255, 255, 0.3);
   backdrop-filter: blur(10px);
@@ -45,15 +45,15 @@
 }
 
 .h-title {
-  font-size: 18px;  /* 减小字体 */
+  font-size: 18px;  /* Reduced font size */
   font-weight: bold;
   color: #00ffff;
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-  letter-spacing: 2px;  /* 减小字间距 */
+  letter-spacing: 2px;  /* Reduced letter spacing */
 }
 
 .h-subtitle {
-  font-size: 10px;  /* 减小字体 */
+  font-size: 10px;  /* Reduced font size */
   color: #00ff88;
   letter-spacing: 1px;
 }
@@ -89,7 +89,7 @@
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
 }
 
-/* 总开关 */
+/* Master switch */
 .h-master-switch {
   position: relative;
   width: 80px;
@@ -152,7 +152,7 @@
   pointer-events: none;
 }
 
-/* 重置按钮 */
+/* Reset button */
 .h-reset-btn {
   width: 36px;
   height: 36px;
@@ -180,43 +180,43 @@
   cursor: not-allowed;
 }
 
-/* ==================== 横向流程容器 ==================== */
+/* ==================== Horizontal Flow Container ==================== */
 
 .h-flow-container {
   position: relative;
   z-index: 5;
   flex: 1;
   display: flex;
-  align-items: flex-start;  /* 改为flex-start，让内容从顶部开始 */
+  align-items: flex-start;  /* Changed to flex-start so content starts from top */
   justify-content: flex-start;
   gap: 30px;
-  padding: 30px 30px;  /* 增加顶部padding从15px到30px */
+  padding: 30px 30px;  /* Increased top padding from 15px to 30px */
   padding-right: 150px;
   padding-bottom: 30px;
   overflow-x: auto;
-  overflow-y: visible;  /* 改为visible，允许垂直溢出 */
+  overflow-y: visible;  /* Changed to visible to allow vertical overflow */
   min-width: 0;
 }
 
-/* 隐藏滚动条但保持可滚动 */
+/* Hide scrollbar but keep scrollable */
 .h-flow-container::-webkit-scrollbar {
-  display: none;  /* 隐藏滚动条 */
+  display: none;  /* Hide scrollbar */
 }
 
 .h-flow-container {
-  -ms-overflow-style: none;  /* IE和Edge */
+  -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
 
-/* ==================== 层 (Layer) ==================== */
+/* ==================== Layer ==================== */
 
 .h-layer {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;  /* 改为左对齐 */
+  align-items: flex-start;  /* Changed to left-aligned */
   gap: 15px;
-  min-width: 200px;  /* 增加最小宽度 */
-  flex-shrink: 0;  /* 防止收缩 */
+  min-width: 200px;  /* Increased minimum width */
+  flex-shrink: 0;  /* Prevent shrinking */
   animation: layerFadeIn 0.6s ease-out forwards;
   opacity: 0;
 }
@@ -234,7 +234,7 @@
 
 .h-layer-header {
   text-align: center;
-  margin-top: 0;  /* 不需要额外上边距，因为容器已绍flex-start */
+  margin-top: 0;  /* No extra top margin since container uses flex-start */
   margin-bottom: 5px;
 }
 
@@ -260,21 +260,21 @@
   align-items: center;
 }
 
-/* ==================== 节点 (Node) ==================== */
+/* ==================== Node ==================== */
 
 .h-node-wrapper {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;  /* 顶部对齐 */
+  align-items: flex-start;  /* Top-aligned */
   gap: 12px;
   position: relative;
   min-width: fit-content;
   flex-shrink: 0;
 }
 
-/* 确保父节点左对齐 */
+/* Ensure parent nodes are left-aligned */
 .h-layer .h-node-wrapper {
-  align-self: flex-start;  /* 强制每个wrapper左对齐 */
+  align-self: flex-start;  /* Force each wrapper to left-align */
 }
 
 .h-node {
@@ -355,7 +355,7 @@
   text-shadow: none;
 }
 
-/* 脉冲效果 */
+/* Pulse effect */
 .h-node-pulse {
   position: absolute;
   top: 5px;
@@ -378,22 +378,22 @@
   }
 }
 
-/* ==================== 子节点 (Sub Nodes) ==================== */
+/* ==================== Sub Nodes ==================== */
 
 .h-sub-nodes {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 6px 8px;  /* 减小内边距 */
+  padding: 6px 8px;  /* Reduced padding */
   background: rgba(10, 10, 30, 0.6);
   border: 1px solid rgba(0, 255, 255, 0.2);
   border-radius: 6px;
   backdrop-filter: blur(5px);
   max-height: 300px;
   overflow-y: auto;
-  min-width: 100px;  /* 减小最小宽度从180px到60px */
-  width: fit-content;  /* 自适应宽度 */
-  flex-shrink: 0;  /* 防止收缩 */
+  min-width: 100px;  /* Reduced minimum width from 180px to 100px */
+  width: fit-content;  /* Auto-fit width */
+  flex-shrink: 0;  /* Prevent shrinking */
 }
 
 .h-sub-nodes::-webkit-scrollbar {
@@ -412,8 +412,8 @@
 .h-sub-node {
   display: flex;
   align-items: center;
-  gap: 4px;  /* 减小间距 */
-  padding: 4px 8px;  /* 减小内边距 */
+  gap: 4px;  /* Reduced gap */
+  padding: 4px 8px;  /* Reduced padding */
   background: rgba(30, 30, 50, 0.6);
   border: 1px solid rgba(100, 100, 150, 0.3);
   border-radius: 4px;
@@ -421,7 +421,7 @@
   animation: subNodeSlideIn 0.3s ease-out forwards;
   opacity: 0;
   white-space: nowrap;
-  font-size: 11px;  /* 减小字体 */
+  font-size: 11px;  /* Reduced font size */
 }
 
 @keyframes subNodeSlideIn {
@@ -470,25 +470,25 @@
   white-space: nowrap;
 }
 
-/* ==================== 连接器 (Connector) ==================== */
+/* ==================== Connector ==================== */
 
 .h-connector {
   position: relative;
-  width: 20px;  /* 进一步减小连接器宽度 */
+  width: 20px;  /* Further reduced connector width */
   height: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;  /* 防止收缩 */
+  flex-shrink: 0;  /* Prevent shrinking */
 }
 
 .h-connector-line {
   position: absolute;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, 
-    rgba(0, 255, 255, 0.3) 0%, 
-    rgba(0, 255, 255, 0.6) 50%, 
+  background: linear-gradient(90deg,
+    rgba(0, 255, 255, 0.3) 0%,
+    rgba(0, 255, 255, 0.6) 50%,
     rgba(0, 255, 255, 0.3) 100%
   );
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
@@ -514,7 +514,7 @@
   }
 }
 
-/* 流动效果 */
+/* Flow effect */
 .h-connector-flow {
   position: absolute;
   width: 20px;
@@ -538,7 +538,7 @@
   }
 }
 
-/* ==================== 底部信息栏 ==================== */
+/* ==================== Bottom Info Bar ==================== */
 
 .h-footer {
   position: relative;
@@ -568,7 +568,7 @@
   letter-spacing: 0.5px;
 }
 
-/* ==================== 加载和错误状态 ==================== */
+/* ==================== Loading and Error States ==================== */
 
 .loading-spinner {
   display: flex;
@@ -604,22 +604,22 @@
   font-size: 18px;
 }
 
-/* ==================== 响应式设计 ==================== */
+/* ==================== Responsive Design ==================== */
 
 @media (max-width: 1400px) {
   .h-node {
     width: 100px;
     height: 45px;
   }
-  
+
   .h-node-icon {
     font-size: 18px;
   }
-  
+
   .h-node-label {
     font-size: 12px;
   }
-  
+
   .h-connector {
     width: 40px;
   }
@@ -629,26 +629,26 @@
   .h-flow-container {
     gap: 20px;
   }
-  
+
   .h-layer {
     min-width: 120px;
   }
-  
+
   .h-node {
     width: 90px;
     height: 40px;
   }
-  
+
   .h-node-icon {
     font-size: 16px;
   }
-  
+
   .h-node-label {
     font-size: 11px;
   }
 }
 
-/* ==================== 缩放控制 (Zoom Controls) ==================== */
+/* ==================== Zoom Controls ==================== */
 
 .h-zoom-controls {
   position: fixed;

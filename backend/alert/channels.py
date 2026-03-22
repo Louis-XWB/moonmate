@@ -1,6 +1,6 @@
 """
-告警渠道实现
-支持邮件、Telegram、Webhook 等通知方式
+Alert channel implementations
+Supports email, Telegram, Webhook, and other notification methods
 """
 
 import asyncio
@@ -18,7 +18,7 @@ logger = get_logger("alert_channels")
 
 
 class EmailChannel(AlertChannelHandler):
-    """邮件告警渠道"""
+    """Email alert channel"""
     
     def __init__(
         self,
@@ -109,9 +109,9 @@ class EmailChannel(AlertChannelHandler):
                     {alert.message}
                 </div>
                 <div class="alert-meta">
-                    <strong>时间:</strong> {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}<br>
-                    <strong>类别:</strong> {alert.category.value}<br>
-                    <strong>来源:</strong> {alert.source or 'Trading Agent'}
+                    <strong>Time:</strong> {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}<br>
+                    <strong>Category:</strong> {alert.category.value}<br>
+                    <strong>Source:</strong> {alert.source or 'Trading Agent'}
                 </div>
             </div>
         </body>
@@ -125,30 +125,30 @@ class EmailChannel(AlertChannelHandler):
             return False
         
         try:
-            # 创建邮件
+            # Create email
             msg = MIMEMultipart("alternative")
             msg["Subject"] = f"[{alert.level.value.upper()}] {alert.title}"
             msg["From"] = self.sender
             msg["To"] = ", ".join(self.recipients)
             
-            # 纯文本版本
+            # Plain text version
             text_content = f"""
 {alert.level.value.upper()}: {alert.title}
 
 {alert.message}
 
-时间: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}
-类别: {alert.category.value}
-来源: {alert.source or 'Trading Agent'}
+Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}
+Category: {alert.category.value}
+Source: {alert.source or 'Trading Agent'}
             """
             
-            # HTML 版本
+            # HTML version
             html_content = self._build_html_content(alert)
             
             msg.attach(MIMEText(text_content, "plain"))
             msg.attach(MIMEText(html_content, "html"))
             
-            # 发送邮件（使用线程池避免阻塞）
+            # Send email (using thread pool to avoid blocking)
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self._send_email, msg)
             
@@ -160,7 +160,7 @@ class EmailChannel(AlertChannelHandler):
             return False
     
     def _send_email(self, msg: MIMEMultipart):
-        """同步发送邮件"""
+        """Send email synchronously"""
         with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
             if self.use_tls:
                 server.starttls()
@@ -169,7 +169,7 @@ class EmailChannel(AlertChannelHandler):
 
 
 class TelegramChannel(AlertChannelHandler):
-    """Telegram 告警渠道"""
+    """Telegram alert channel"""
     
     def __init__(
         self,
@@ -202,8 +202,8 @@ class TelegramChannel(AlertChannelHandler):
 
 {alert.message}
 
-<i>时间: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}</i>
-<i>类别: {alert.category.value}</i>
+<i>Time: {alert.timestamp.strftime('%Y-%m-%d %H:%M:%S')}</i>
+<i>Category: {alert.category.value}</i>
         """
         return message.strip()
     
@@ -236,7 +236,7 @@ class TelegramChannel(AlertChannelHandler):
             return False
     
     async def send_photo(self, photo_url: str, caption: str = "") -> bool:
-        """发送图片（用于发送图表等）"""
+        """Send photo (for charts, etc.)"""
         if not self.is_configured():
             return False
         
@@ -260,7 +260,7 @@ class TelegramChannel(AlertChannelHandler):
 
 
 class WebhookChannel(AlertChannelHandler):
-    """Webhook 告警渠道"""
+    """Webhook alert channel"""
     
     def __init__(
         self,
@@ -278,7 +278,7 @@ class WebhookChannel(AlertChannelHandler):
         return bool(self.url)
     
     def _build_payload(self, alert: Alert) -> Dict[str, Any]:
-        """构建 Webhook 请求体"""
+        """Build Webhook request body"""
         return {
             "alert_id": alert.id,
             "level": alert.level.value,
@@ -337,7 +337,7 @@ class WebhookChannel(AlertChannelHandler):
 
 
 class SlackChannel(AlertChannelHandler):
-    """Slack 告警渠道"""
+    """Slack alert channel"""
     
     def __init__(self, webhook_url: str = ""):
         self.webhook_url = webhook_url
@@ -355,7 +355,7 @@ class SlackChannel(AlertChannelHandler):
         return colors.get(level, "#808080")
     
     def _build_slack_message(self, alert: Alert) -> Dict[str, Any]:
-        """构建 Slack 消息格式"""
+        """Build Slack message format"""
         return {
             "attachments": [{
                 "color": self._get_level_color(alert.level),
@@ -406,7 +406,7 @@ class SlackChannel(AlertChannelHandler):
 
 
 class DiscordChannel(AlertChannelHandler):
-    """Discord 告警渠道"""
+    """Discord alert channel"""
     
     def __init__(self, webhook_url: str = ""):
         self.webhook_url = webhook_url
@@ -424,7 +424,7 @@ class DiscordChannel(AlertChannelHandler):
         return colors.get(level, 0x808080)
     
     def _build_discord_message(self, alert: Alert) -> Dict[str, Any]:
-        """构建 Discord 消息格式"""
+        """Build Discord message format"""
         return {
             "embeds": [{
                 "title": f"[{alert.level.value.upper()}] {alert.title}",

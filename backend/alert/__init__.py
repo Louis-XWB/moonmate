@@ -1,6 +1,6 @@
 """
-告警系统模块
-支持多渠道告警通知
+Alert system module
+Supports multi-channel alert notifications
 """
 
 from .alerter import AlertManager, Alert, AlertLevel, AlertChannel

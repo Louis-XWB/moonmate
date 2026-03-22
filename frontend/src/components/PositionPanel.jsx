@@ -7,16 +7,16 @@ function PositionPanel({ status }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">持仓管理</h2>
+        <h2 className="text-xl font-bold">Position Management</h2>
         <div className="text-sm text-slate-400">
-          共 {positions.length} 个持仓
+          Total {positions.length} positions
         </div>
       </div>
 
       {positions.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-slate-400">暂无持仓</p>
-          <p className="text-sm text-slate-500 mt-2">当策略产生交易信号时，持仓将显示在这里</p>
+          <p className="text-slate-400">No positions</p>
+          <p className="text-sm text-slate-500 mt-2">When strategy generates a trading signal, positions will appear here</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -24,16 +24,16 @@ function PositionPanel({ status }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>交易对</th>
-                  <th>方向</th>
-                  <th>数量</th>
-                  <th>开仓价</th>
-                  <th>当前价</th>
-                  <th>未实现盈亏</th>
-                  <th>盈亏比例</th>
-                  <th>止损价</th>
-                  <th>止盈价</th>
-                  <th>操作</th>
+                  <th>Trading pair</th>
+                  <th>Direction</th>
+                  <th>Quantity</th>
+                  <th>Entry Price</th>
+                  <th>Current Price</th>
+                  <th>Unrealized P&L</th>
+                  <th>Profit Ratio</th>
+                  <th>Stop-loss Price</th>
+                  <th>Take-profit Price</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -43,9 +43,9 @@ function PositionPanel({ status }) {
                     <td>
                       <span className={`flex items-center space-x-1 ${pos.side === 'buy' ? 'text-emerald-400' : 'text-red-400'}`}>
                         {pos.side === 'buy' ? (
-                          <><TrendingUp className="w-4 h-4" /><span>多</span></>
+                          <><TrendingUp className="w-4 h-4" /><span>Long</span></>
                         ) : (
-                          <><TrendingDown className="w-4 h-4" /><span>空</span></>
+                          <><TrendingDown className="w-4 h-4" /><span>Short</span></>
                         )}
                       </span>
                     </td>
@@ -73,16 +73,16 @@ function PositionPanel({ status }) {
         </div>
       )}
 
-      {/* 持仓统计 */}
+      {/* PositionStatistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
-          <p className="text-slate-400 text-sm">总持仓价值</p>
+          <p className="text-slate-400 text-sm">Total Position Value</p>
           <p className="text-2xl font-bold mt-1">
             ${positions.reduce((sum, p) => sum + (p.size * p.current_price), 0).toFixed(2)}
           </p>
         </div>
         <div className="card">
-          <p className="text-slate-400 text-sm">未实现盈亏</p>
+          <p className="text-slate-400 text-sm">Unrealized P&L</p>
           <p className={`text-2xl font-bold mt-1 ${
             positions.reduce((sum, p) => sum + p.unrealized_pnl, 0) >= 0 
               ? 'text-emerald-400' 
@@ -92,7 +92,7 @@ function PositionPanel({ status }) {
           </p>
         </div>
         <div className="card">
-          <p className="text-slate-400 text-sm">已实现盈亏</p>
+          <p className="text-slate-400 text-sm">Realized P&L</p>
           <p className={`text-2xl font-bold mt-1 ${
             positions.reduce((sum, p) => sum + p.realized_pnl, 0) >= 0 
               ? 'text-emerald-400' 
