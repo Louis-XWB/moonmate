@@ -55,7 +55,7 @@ class RiskConfig(BaseModel):
 class AIConfig(BaseModel):
     """AI configuration"""
     enabled: bool = Field(default=True, description="Whether to enable AI signals")
-    model: str = Field(default="gpt-4.1-mini", description="Model to use")
+    model: str = Field(default="gemini-3-flash-preview", description="Model to use")
     temperature: float = Field(default=0.3, description="Model temperature")
     max_tokens: int = Field(default=1000, description="Maximum token count")
     confidence_threshold: float = Field(default=0.6, description="Signal confidence threshold")

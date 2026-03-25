@@ -33,7 +33,7 @@ class SentimentAnalyzer:
     
     def __init__(
         self,
-        model: str = "gpt-4.1-mini",
+        model: str = "gemini-3-flash-preview",
         temperature: float = 0.2,
         use_llm: bool = True
     ):
@@ -194,12 +194,14 @@ Please provide your sentiment assessment (JSON format):
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "You are a JSON API. Respond with valid JSON only. No markdown, no code fences, no explanatory text."},
+                {"role": "user", "content": prompt},
             ],
             temperature=self.temperature,
-            max_tokens=400
+            max_tokens=8192,
+            response_format={"type": "json_object"},
         )
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
     
     def _parse_llm_response(
         self,

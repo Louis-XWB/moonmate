@@ -128,9 +128,12 @@ class NewsAnalystAgent(BaseAgent):
                 )
             
             # Calculate combined news impact
-            bullish_count = sum(1 for n in news_impacts if n.get("impact_direction") == "bullish")
-            bearish_count = sum(1 for n in news_impacts if n.get("impact_direction") == "bearish")
-            avg_score = sum(n.get("impact_score", 0) for n in news_impacts) / len(news_impacts)
+            def _dir(n): return n.impact_direction.value if hasattr(n.impact_direction, 'value') else str(n.impact_direction)
+            def _score(n): return float(n.impact_score) if hasattr(n, 'impact_score') else 0
+            def _title(n): return str(n.title) if hasattr(n, 'title') else ''
+            bullish_count = sum(1 for n in news_impacts if _dir(n) == "bullish")
+            bearish_count = sum(1 for n in news_impacts if _dir(n) == "bearish")
+            avg_score = sum(_score(n) for n in news_impacts) / len(news_impacts)
             
             # Decision logic
             if avg_score > 0.4:
@@ -160,8 +163,8 @@ class NewsAnalystAgent(BaseAgent):
             
             key_points = []
             for news in news_impacts[:3]:  # Up to 3 items
-                direction_emoji = "📈" if news.get("impact_direction") == "bullish" else "📉" if news.get("impact_direction") == "bearish" else "➡️"
-                key_points.append(f"{direction_emoji} {news.get('title', '')[:50]}...")
+                direction_emoji = "📈" if _dir(news) == "bullish" else "📉" if _dir(news) == "bearish" else "➡️"
+                key_points.append(f"{direction_emoji} {_title(news)[:50]}...")
             
             return self._create_opinion(decision, confidence, reasoning, key_points)
             
@@ -196,10 +199,10 @@ class TechnicalAnalystAgent(BaseAgent):
                 )
             
             # Simple technical analysis logic
-            current_price = float(ticker.get("last", 0))
-            
+            current_price = float(ticker.last_price) if hasattr(ticker, 'last_price') else float(ticker.get("last", 0))
+
             # Calculate moving averages
-            closes = [float(k.get("close", 0)) for k in klines[-20:]]
+            closes = [float(k.close) if hasattr(k, 'close') else float(k.get("close", 0)) for k in klines[-20:]]
             ma5 = sum(closes[-5:]) / 5 if len(closes) >= 5 else current_price
             ma20 = sum(closes) / len(closes) if closes else current_price
             
@@ -350,11 +353,11 @@ class RiskManagerAgent(BaseAgent):
         """Analyze risk status"""
         try:
             # Get risk control status
-            risk_status = self.risk_manager.get_status()
-            
-            current_drawdown = risk_status.get("current_drawdown", 0)
-            consecutive_losses = risk_status.get("consecutive_losses", 0)
-            daily_pnl = risk_status.get("daily_pnl", 0)
+            risk_state = self.risk_manager.get_state()
+
+            current_drawdown = getattr(risk_state, 'current_drawdown', 0)
+            consecutive_losses = getattr(risk_state, 'consecutive_losses', 0)
+            daily_pnl = getattr(risk_state, 'daily_pnl', 0)
             
             key_points = []
             warnings = []

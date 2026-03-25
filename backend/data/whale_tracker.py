@@ -130,10 +130,12 @@ class WhaleTracker:
     
     async def fetch_all_positions(self, symbol: str) -> List[WhalePosition]:
         """
-        Fetch all positions(Mock data)
-        
-        Note: Production implementation should call the Hyperliquid API
-        Using mock data for demonstration
+        Fetch all whale positions.
+
+        Currently uses mock data for demonstration.
+        To use real Hyperliquid on-chain data, uncomment the
+        "── Real Implementation ──" block below and comment out
+        the "── Mock Data ──" block.
         """
         try:
             # Check cache
@@ -141,23 +143,74 @@ class WhaleTracker:
                 last_update = self.last_update.get(symbol)
                 if last_update and (datetime.now() - last_update).seconds < self.cache_ttl:
                     return self.whale_positions_cache[symbol]
-            
-            # Production implementation should call the Hyperliquid API
+
+            # ── Real Implementation (Hyperliquid Public API) ──────────────────
+            # Uncomment the block below to fetch real on-chain positions.
+            # No API key required — Hyperliquid is a public permissionless chain.
+            #
+            # coin = symbol.split("/")[0]  # e.g. "BTC" from "BTC/USDT"
             # session = await self._get_session()
-            # async with session.post(f"{self.api_base_url}/info", json={
-            #     "type": "allMids"
-            # }) as resp:
-            #     data = await resp.json()
-            
-            # Mock data
+            #
+            # # Step 1: Get current mid prices for all assets
+            # async with session.post(f"{self.api_base_url}/info",
+            #                         json={"type": "allMids"}) as resp:
+            #     mids: dict = await resp.json()  # {"BTC": "88000.5", "ETH": "3200.1", ...}
+            # current_prices = {k: float(v) for k, v in mids.items()}
+            #
+            # # Step 2: Fetch top traders from the leaderboard
+            # async with session.post(f"{self.api_base_url}/info",
+            #                         json={"type": "leaderboard"}) as resp:
+            #     leaderboard = await resp.json()
+            # # leaderboard is a list of {"ethAddress": "0x...", "accountValue": "...", ...}
+            # top_addresses = [e["ethAddress"] for e in leaderboard[:100]]
+            #
+            # # Step 3: Fetch each trader's open positions and filter whales
+            # positions = []
+            # for address in top_addresses:
+            #     async with session.post(f"{self.api_base_url}/info", json={
+            #         "type": "clearinghouseState",
+            #         "user": address,
+            #     }) as resp:
+            #         state = await resp.json()
+            #     for asset_pos in state.get("assetPositions", []):
+            #         pos = asset_pos.get("position", {})
+            #         if not pos or not pos.get("szi"):
+            #             continue
+            #         pos_coin = pos["coin"]
+            #         if pos_coin != coin:
+            #             continue
+            #         size_usd = abs(float(pos["szi"])) * current_prices.get(pos_coin, 0)
+            #         if size_usd < self.whale_threshold:
+            #             continue
+            #         entry_px = float(pos.get("entryPx") or 0)
+            #         unrealized_pnl = float(pos.get("unrealizedPnl") or 0)
+            #         leverage_val = float((pos.get("leverage") or {}).get("value", 1))
+            #         liq_px = float(pos.get("liquidationPx") or 0)
+            #         side = "long" if float(pos["szi"]) > 0 else "short"
+            #         positions.append(WhalePosition(
+            #             address=address,
+            #             symbol=symbol,
+            #             side=side,
+            #             size=size_usd,
+            #             entry_price=entry_px,
+            #             current_price=current_prices.get(pos_coin, 0),
+            #             pnl=unrealized_pnl,
+            #             pnl_percent=unrealized_pnl / size_usd if size_usd else 0,
+            #             leverage=leverage_val,
+            #             liquidation_price=liq_px or None,
+            #         ))
+            # ─────────────────────────────────────────────────────────────────
+
+            # ── Mock Data (demo only) ─────────────────────────────────────────
             positions = self._generate_mock_positions(symbol)
-            
+            # ─────────────────────────────────────────────────────────────────
+
             # Update cache
             self.whale_positions_cache[symbol] = positions
             self.last_update[symbol] = datetime.now()
-            
+
             return positions
-            
+
         except Exception as e:
             logger.error(f"Error fetching positions: {e}")
             return []

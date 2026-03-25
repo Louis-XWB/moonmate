@@ -45,11 +45,7 @@ class ReversalStrategy(BaseStrategy):
         avoid_falling_knife: bool = True,
         max_consecutive_losses: int = 3
     ):
-        super().__init__(
-            name="reversal",
-            version="1.0.0",
-            description="Reversal strategy: captures price reversion after overbought/oversold conditions"
-        )
+        super().__init__(name="reversal")
 
         self.rsi_oversold = rsi_oversold
         self.rsi_overbought = rsi_overbought
@@ -256,7 +252,9 @@ class ReversalStrategy(BaseStrategy):
     async def generate_signal(
         self,
         symbol: str,
-        klines: List[Kline],
+        ticker: Optional[Any] = None,
+        klines: List[Kline] = None,
+        position: Optional[Any] = None,
         context: Optional[Dict[str, Any]] = None
     ) -> Signal:
         """Generate reversal signal"""
