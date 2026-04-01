@@ -11,7 +11,7 @@ const MultiAgentPanel = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/multi-agent/deliberate?symbol=BTC/USDT');
+      const response = await fetch('http://localhost:8000/api/multi-agent/deliberate?symbol=BTC/USDT');
       const result = await response.json();
       if (result.success) {
         setConsensus(result.data);

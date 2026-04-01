@@ -5,11 +5,12 @@ Uses LLM to analyze the impact of news on cryptocurrency prices
 
 import asyncio
 import json
+import os
 from datetime import datetime
 from typing import List, Dict, Optional
 from enum import Enum
 from pydantic import BaseModel, Field
-from openai import OpenAI
+import httpx
 
 from backend.core.logger import get_logger
 
@@ -57,7 +58,8 @@ class NewsAnalyzer:
     ):
         self.model = model
         self.temperature = temperature
-        self.client = OpenAI()
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         
         # News cache
         self._cache: Dict[str, NewsImpact] = {}
@@ -190,17 +192,31 @@ Please provide your impact assessment (JSON format):
     
     def _call_llm(self, prompt: str) -> str:
         """Call LLM"""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a JSON API. Respond with valid JSON only. No markdown, no code fences, no explanatory text."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=self.temperature,
-            max_tokens=8192,
-            response_format={"type": "json_object"},
-        )
-        return response.choices[0].message.content or ""
+        full_prompt = "You are a JSON API. Respond with valid JSON only. No markdown, no code fences, no explanatory text.\n\n" + prompt
+
+        payload = {
+            "contents": [{
+                "parts": [{"text": full_prompt}]
+            }],
+            "generationConfig": {
+                "temperature": self.temperature,
+                "maxOutputTokens": 8192,
+                "responseMimeType": "application/json"
+            }
+        }
+
+        try:
+            response = httpx.post(
+                f"{self.api_url}?key={self.api_key}",
+                json=payload,
+                timeout=60.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "") or ""
+        except Exception as e:
+            logger.error(f"Gemini API error: {e}")
+            raise
     
     def _parse_response(self, title: str, response: str) -> NewsImpact:
         """Parse LLM response"""

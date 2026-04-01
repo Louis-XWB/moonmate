@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-const API_BASE = 'https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer';
+const API_BASE = 'http://localhost:8000';
 
 export default function ScraperPanel() {
   const [status, setStatus] = useState(null);

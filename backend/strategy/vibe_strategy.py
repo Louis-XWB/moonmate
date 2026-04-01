@@ -4,6 +4,7 @@ Allows users to customize strategy preferences; AI incorporates these into tradi
 """
 
 import json
+import os
 from datetime import datetime
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
@@ -26,7 +27,17 @@ class VibeRule:
 class VibeStrategyManager:
     """Vibe strategy manager"""
 
-    def __init__(self, storage_path: str = "/home/ubuntu/auto-trading-agent/data/vibe_rules.json"):
+    def __init__(self, storage_path: str = None):
+        """
+        Initialize the Vibe strategy manager
+
+        Args:
+            storage_path: Strategy rule storage path (defaults to data/vibe_rules.json in project root)
+        """
+        if storage_path is None:
+            # Default to data/vibe_rules.json in the project root
+            base_dir = Path(__file__).parent.parent.parent
+            storage_path = base_dir / "data" / "vibe_rules.json"
         """
         Initialize the Vibe strategy manager
 

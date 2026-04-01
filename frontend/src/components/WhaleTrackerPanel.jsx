@@ -13,11 +13,11 @@ const WhaleTrackerPanel = () => {
     setError(null);
     try {
       // Get analysis data
-      const analysisResponse = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/whale/analysis?symbol=BTC/USDT');
+      const analysisResponse = await fetch('http://localhost:8000/api/whale/analysis?symbol=BTC/USDT');
       const analysisResult = await analysisResponse.json();
       
       // Get alerts
-      const alertsResponse = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/whale/alerts?symbol=BTC/USDT');
+      const alertsResponse = await fetch('http://localhost:8000/api/whale/alerts?symbol=BTC/USDT');
       const alertsResult = await alertsResponse.json();
       
       if (analysisResult.success) {

@@ -13,7 +13,7 @@ const VibeStrategyPanel = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/vibe/rules');
+      const response = await fetch('http://localhost:8000/api/vibe/rules');
       const data = await response.json();
       if (data.success) {
         setRules(data.rules);
@@ -35,7 +35,7 @@ const VibeStrategyPanel = () => {
     }
 
     try {
-      const response = await fetch('https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/vibe/rules', {
+      const response = await fetch('http://localhost:8000/api/vibe/rules', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ const VibeStrategyPanel = () => {
   // Update rule
   const updateRule = async (ruleId, content, enabled) => {
     try {
-      const response = await fetch(`https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/vibe/rules/${ruleId}`, {
+      const response = await fetch(`http://localhost:8000/api/vibe/rules/${ruleId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ const VibeStrategyPanel = () => {
     }
 
     try {
-      const response = await fetch(`https://8000-igyitwrl655jpdhlmwvph-a31b4228.sg1.manus.computer/api/vibe/rules/${ruleId}`, {
+      const response = await fetch(`http://localhost:8000/api/vibe/rules/${ruleId}`, {
         method: 'DELETE',
       });
       const data = await response.json();

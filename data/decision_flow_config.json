@@ -29,7 +29,7 @@
     "newsData": {
       "enabled": true,
       "status": "idle",
-      "last_updated": null,
+      "last_updated": "2026-03-26T08:03:36.468752",
       "sub_nodes": [
         {
           "id": "coindesk",
@@ -40,7 +40,7 @@
         {
           "id": "cointelegraph",
           "name": "Cointelegraph",
-          "enabled": true,
+          "enabled": false,
           "status": "idle"
         },
         {
@@ -196,23 +196,23 @@
     "vibeRules": {
       "enabled": true,
       "status": "idle",
-      "last_updated": "2026-01-27T23:49:54.386799",
+      "last_updated": "2026-03-26T08:03:40.020859",
       "sub_nodes": [
         {
           "id": "vibe_vibe_1_1769571489",
-          "name": "I prefer long positions and dislike shorting",
+          "name": "I prefer long positions and di...",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "vibe_vibe_2_1769571550",
-          "name": "Only trade during US stock market hours",
+          "name": "Only trade during US stock mar...",
           "enabled": true,
           "status": "idle"
         },
         {
           "id": "vibe_vibe_3_1769572083",
-          "name": "If volatility exceeds 2%, pause trading and continue observing",
+          "name": "If volatility exceeds 2%, paus...",
           "enabled": true,
           "status": "idle"
         }
@@ -256,5 +256,5 @@
       "sub_nodes": null
     }
   },
-  "updated_at": "2026-01-28T01:07:59.722662"
+  "updated_at": "2026-03-26T08:04:09.625477"
 }

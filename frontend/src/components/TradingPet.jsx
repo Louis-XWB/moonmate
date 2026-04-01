@@ -104,13 +104,13 @@ export default function TradingPet({ stats, isRunning, ticker, onStart, onStop }
   const handlePetClick = () => {
     // Show different messages based on status
     if (!isRunning) {
-      showPetMessage('Hey! Start the system! I'm ready to go! 💪')
+      showPetMessage("Hey! Start the system! I'm ready to go! 💪")
     } else if (petStatus === PetStatus.HAPPY || petStatus === PetStatus.EXCITED) {
       showPetMessage(getRandomMessage('profit'))
     } else if (petStatus === PetStatus.SAD || petStatus === PetStatus.WORRIED) {
       showPetMessage(getRandomMessage('loss'))
     } else {
-      showPetMessage('Let's analyze the market together and find opportunities! 🔍')
+      showPetMessage("Let's analyze the market together and find opportunities! 🔍")
     }
   }
   

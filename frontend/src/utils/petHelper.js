@@ -88,28 +88,28 @@ export const Achievements = [
 export const PetMessages = {
   // Start messages
   startup: [
-    'System started! Let's make some money! 💪',
-    'Ready! I'll keep an eye on the market for you! 👀',
-    'Let's go! Today we're gonna profit! ✨'
+    "System started! Let's make some money! 💪",
+    "Ready! I'll keep an eye on the market for you! 👀",
+    "Let's go! Today we're gonna profit! ✨"
   ],
-  
+
   // Stop messages
   shutdown: [
     'Good work, time for a rest~ 😴',
-    'Work's done for today! Let's keep it up tomorrow! 💤',
+    "Work's done for today! Let's keep it up tomorrow! 💤",
     'System stopped, time for sleep~ Zzz...'
   ],
-  
+
   // Profit messages
   profit: [
     'Awesome! We made money! 🎉',
     'Wow! That was a solid trade! 💰',
     'Keep it up, victory is near! 🏆'
   ],
-  
+
   // Loss messages
   loss: [
-    'Don't give up, we'll win it back next time! 💪',
+    "Don't give up, we'll win it back next time! 💪",
     'Failure is the mother of success, keep going! 📈',
     'Stay calm, analyze, and find the issue! 🤔'
   ],

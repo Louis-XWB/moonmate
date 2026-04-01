@@ -12,7 +12,8 @@ import os
 from dotenv import load_dotenv
 
 # Load .env file
-load_dotenv('/home/ubuntu/auto-trading-agent/.env')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,7 @@ from pydantic import BaseModel, Field
 
 # Import core modules
 import sys
-sys.path.insert(0, '/home/ubuntu/auto-trading-agent')
+sys.path.insert(0, BASE_DIR)
 
 from backend.core.config import Config, get_config, set_config
 from backend.core.events import EventBus, Event, EventType, get_event_bus
